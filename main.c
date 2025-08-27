@@ -1,5 +1,3 @@
-#include <ncurses.h>
-#include <unistd.h>
 #include "lc3/lc3.h"
 
 
