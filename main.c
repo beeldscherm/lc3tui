@@ -8,9 +8,6 @@ int main(int argc, char **argv) {
     LC3_RunTermInterface(&tui);
 
     LC3_DestroyTermInterface(tui);
-
-    printf("%ld instructions executed\n", sim.counter);
     LC3_DestroySimInstance(sim);
-
     return 0;
 }

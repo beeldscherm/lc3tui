@@ -1,6 +1,6 @@
 #pragma once
 #include <stdbool.h>
-#include <ncurses.h>
+#include <curses.h>
 #include "lc3_sim.h"
 
 // Number formats for the TUI
@@ -26,8 +26,7 @@ typedef struct LC3_TermInterface {
     StringArray commands;           // Previously executed commands
     int delay;                      // Character wait delay
     LC3_numDisplay numDisplay;      // Number display format
-    bool running;                   // TUI exits once this turns false         
-    char *cmdError;                 // Error string for when a command fails
+    bool running;                   // TUI exits once this turns false
 } LC3_TermInterface;
 
 
@@ -53,3 +52,9 @@ int LC3_RunTermInterface(LC3_TermInterface *tui);
  * Used so the PC does not get lost suddenly
  */
 bool LC3_IsAddrDisplayed(LC3_TermInterface *tui, uint16_t addr);
+
+/*
+ * Show specified message in command row of TUI
+ * If isError is true, the message will be printed in red
+ */
+void LC3_ShowMessage(LC3_TermInterface *tui, const char *msg, bool isError);

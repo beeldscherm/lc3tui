@@ -73,7 +73,7 @@ typedef struct LC3_SimInstance {
     uint16_t pc;                // PC
     uint8_t  cc;                // Condition codes
     uint32_t flags;             // Combination of LC3_SimFlags
-    size_t counter;             // How many instructions the simulator has executed
+    size_t counter, c2;         // How many instructions the simulator has executed and a variable for commands
     const char *error;          // Error string (currently nearly unused)
     LC3_StateHistory history;   // Previous states
     InputQueue inputs;          // Input queue

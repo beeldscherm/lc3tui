@@ -68,6 +68,7 @@ LC3_SimInstance LC3_CreateSimInstance() {
         .cc      = 0,
         .flags   = LC3_SIM_REDIR_TRAP | LC3_SIM_HALTED,
         .counter = 0,
+        .c2      = 0,
         .error   = NULL,
         .history = newStateHistory(),
         .inputs  = newInputQueue(),

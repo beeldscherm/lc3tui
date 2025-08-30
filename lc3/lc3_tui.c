@@ -69,7 +69,6 @@ LC3_TermInterface LC3_CreateTermInterface(LC3_SimInstance *sim) {
         .delay = 100,
         .numDisplay = LC3_NDISPLAY_HEX,
         .running = false,
-        .cmdError = NULL,
     };
 
     keypad(stdscr, true);
@@ -285,13 +284,6 @@ static void handleInput(LC3_TermInterface *tui) {
                             break;
             case ':':       cmd = getCommand(tui);
                             LC3_ExecuteCommand(tui, cmd.ptr);
-                            if (tui->cmdError != NULL) {
-                                attron(COLOR_PAIR(1));
-                                move(tui->rows - 1, 0);
-                                clrtoeol();
-                                addstr(tui->cmdError);
-                                attroff(COLOR_PAIR(1));
-                            }
                             halfdelay(tui->delay);
                             break;
             case '\n':      tui->sim->flags &= ~LC3_SIM_HALTED;
@@ -304,6 +296,18 @@ static void handleInput(LC3_TermInterface *tui) {
             case 'u':       LC3_ExecuteCommand(tui, "u");
         }
     }
+}
+
+
+void LC3_ShowMessage(LC3_TermInterface *tui, const char *msg, bool isError) {
+    if (isError) {
+        attron(COLOR_PAIR(1));
+    }
+
+    move(tui->rows - 1, 0);
+    clrtoeol();
+    addstr(msg);
+    attroff(COLOR_PAIR(1));
 }
 
 
