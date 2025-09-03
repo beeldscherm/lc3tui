@@ -1,7 +1,10 @@
 #pragma once
+#include "lib/config.h"
+
 #include <stdbool.h>
 #include <curses.h>
 #include "lc3_sim.h"
+
 
 // Number formats for the TUI
 typedef enum LC3_numDisplay {

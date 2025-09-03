@@ -81,6 +81,5 @@ Please create an issue if you encounter any bugs!
 
 - [ ] Read functions for other LC3 file formats
 - [ ] "char" number format
-- [ ] Checking for memory errors/leaks with custom ncurses build
 - [ ] Some more keybinds
 - [ ] Saving/loading entire simulator state

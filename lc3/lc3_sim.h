@@ -1,4 +1,5 @@
 #pragma once
+#include "lib/config.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -83,7 +84,7 @@ typedef struct LC3_SimInstance {
 
 /*
  * Allocate and initialize a new sim instance
- * Should be free'd after use with LC3_DestroySimInstance
+ * Should be lc_free'd after use with LC3_DestroySimInstance
  */
 LC3_SimInstance LC3_CreateSimInstance();
 

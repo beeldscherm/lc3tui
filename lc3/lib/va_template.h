@@ -1,5 +1,6 @@
 #pragma once
 #include <stdlib.h> // IWYU pragma: keep
+#include "lc.h"
 
 #ifndef VA_BASE_CAP
 #define VA_BASE_CAP (8)
@@ -23,7 +24,7 @@
 #define vaAllocFunctionDefine(vaType, name) vaType name()
 #define vaAllocFunction(vaType, type, name, pre, post) vaType name() {\
     pre;\
-    vaType va = { .ptr = malloc(VA_BASE_CAP * sizeof(type)), .sz = 0, .cap = VA_BASE_CAP };\
+    vaType va = { .ptr = lc_malloc(VA_BASE_CAP * sizeof(type)), .sz = 0, .cap = VA_BASE_CAP };\
     post;\
     return va;\
 }
@@ -32,7 +33,7 @@
 #define vaAllocCapacityFunctionDefine(vaType, name) vaType name(size_t cap)
 #define vaAllocCapacityFunction(vaType, type, name, pre, post) vaType name(size_t cap) {\
     pre;\
-    vaType va = { .ptr = malloc(cap * sizeof(type)), .sz = 0, .cap = cap };\
+    vaType va = { .ptr = lc_malloc(cap * sizeof(type)), .sz = 0, .cap = cap };\
     post;\
     return va;\
 }
@@ -44,7 +45,7 @@
     pre;\
     if (va->sz >= va->cap) {\
         va->cap *= 2;\
-        va->ptr = realloc(va->ptr, va->cap * sizeof(type));\
+        va->ptr = lc_realloc(va->ptr, va->cap * sizeof(type));\
     }\
     va->ptr[va->sz] = el;\
     va->sz++;\
@@ -69,7 +70,7 @@
         foreach;\
         memset(&el, 0, 0);\
     }\
-    free(va.ptr);\
+    lc_free(va.ptr);\
     post;\
     return;\
 }

@@ -1,7 +1,8 @@
 #include "lc3_tui.h"
 #include "lc3_cmd.h"
-#include <unistd.h>
 #include <sys/time.h>
+#include "lib/lc.h"
+
 
 #define CMD_LEN_MAX (256)
 #define RUNSTEP_US  (100000)
@@ -12,7 +13,7 @@ static bool initialized = false;
 
 String copyString(String str) {
     String ret = {
-        .ptr = malloc(str.cap),
+        .ptr = lc_malloc(str.cap),
         .sz  = str.sz,
         .cap = str.cap,
     };
@@ -30,7 +31,7 @@ void stringInsert(String *str, char c, int idx) {
 
     if (++str->sz >= str->cap) {
         str->cap *= 2;
-        str->ptr = realloc(str->ptr, str->cap * sizeof(char));
+        str->ptr = lc_realloc(str->ptr, str->cap * sizeof(char));
     }
 
     memmove(str->ptr + idx + 1, str->ptr + idx, str->sz - idx);
@@ -228,12 +229,12 @@ static String getCommand(LC3_TermInterface *tui) {
             case KEY_UP:        if (tui->commands.sz == 0) {
                                     break;
                                 }
-                                free(cmd.ptr);
+                                lc_free(cmd.ptr);
                                 hist = (hist > 0) ? (hist - 1) : 0;
                                 cmd = copyString(tui->commands.ptr[hist]);
                                 idx = cmd.sz;
                                 break;
-            case KEY_DOWN:      free(cmd.ptr);
+            case KEY_DOWN:      lc_free(cmd.ptr);
                                 hist = (hist < tui->commands.sz) ? (hist + 1) : hist;
                                 cmd = (hist == tui->commands.sz) ? newString() : copyString(tui->commands.ptr[hist]);
                                 idx = cmd.sz;
@@ -251,7 +252,7 @@ static String getCommand(LC3_TermInterface *tui) {
     if (cmd.sz != 0) {
         addString(&tui->commands, cmd);
     } else {
-        free(cmd.ptr);
+        lc_free(cmd.ptr);
         cmd.ptr = NULL;
     }
 

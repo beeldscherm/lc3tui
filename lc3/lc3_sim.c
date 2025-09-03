@@ -1,11 +1,9 @@
 #include "lc3_sim.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include "lc3_cmd.h"
 #include "lib/va_template.h"
+#include "lib/lc.h"
 
-#define free_nn(x) if (x != NULL) { free(x); }
+#define free_nn(x) if (x != NULL) { lc_free(x); }
 #define LC3_HIST_MAX (8000)
 #define LC3_OUT_MAX  (64000)
 
@@ -33,7 +31,7 @@ vaAppendFunction(String, char, addchar,
 // String array functions
 vaAllocFunction(StringArray, String, newStringArray, ;, ;)
 vaAppendFunction(StringArray, String, addString, ;, ;)
-vaFreeFunction(StringArray, String, freeStringArray, free(el.ptr), ;, ;)
+vaFreeFunction(StringArray, String, freeStringArray, lc_free(el.ptr), ;, ;)
 
 // History functions
 #define keepLast(arr, el_sz, n, foreach) \
@@ -61,7 +59,7 @@ vqFreeFunction(InputQueue, char, freeInputQueue, ;, ;, ;)
 
 LC3_SimInstance LC3_CreateSimInstance() {
     LC3_SimInstance ret = {
-        .memory  = calloc(LC3_MEM_SIZE, sizeof(LC3_MemoryCell)),
+        .memory  = lc_calloc(LC3_MEM_SIZE, sizeof(LC3_MemoryCell)),
         .debug   = newStringArray(),
         .regs    = {0},
         .pc      = 0x3000,
@@ -85,11 +83,11 @@ void LC3_DestroySimInstance(LC3_SimInstance sim) {
         fclose(sim.outf);
     }
 
-    free(sim.memory);
+    lc_free(sim.memory);
     freeStringArray(sim.debug);
     freeStateHistory(sim.history);
     freeInputQueue(sim.inputs);
-    free(sim.output.ptr);
+    lc_free(sim.output.ptr);
 }
 
 
@@ -349,7 +347,7 @@ static void loadExecutableLC3A(LC3_SimInstance *sim, FILE *fp) {
                     String debug = readString(fp);
 
                     if (sim->memory[i].hasDebug) {
-                        free(sim->debug.ptr[sim->memory[i].debugIndex].ptr);
+                        lc_free(sim->debug.ptr[sim->memory[i].debugIndex].ptr);
                         sim->debug.ptr[sim->memory[i].debugIndex] = debug;
                     } else {
                         sim->memory[i].hasDebug = true;

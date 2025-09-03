@@ -1,8 +1,9 @@
 #pragma once
+#include "lib/config.h"
 #include "lc3_tui.h"
 
 /*
- * Returs a string representing the inputted character
+ * Returns a string representing the inputted character
  * For normal characters, this is just the character
  * For escape charactrs, its string representation is returned (e.g. "\\n")
  * Otherwise, the string "\\?" is returned

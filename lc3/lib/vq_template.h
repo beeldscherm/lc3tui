@@ -1,6 +1,7 @@
 #pragma once
 #include <stdlib.h> // IWYU pragma: keep
 #include <string.h> // IWYU pragma: keep
+#include "lc.h"
 
 #ifndef VQ_BASE_CAP
 #define VQ_BASE_CAP (8)
@@ -20,7 +21,7 @@
 #define vqAllocFunctionDefine(vqType, name) vqType name()
 #define vqAllocFunction(vqType, type, name, pre, post) vqType name() {\
     pre;\
-    vqType vq = { .ptr = malloc(VQ_BASE_CAP * sizeof(type)), .hd = 0, .tl = 0, .cap = VQ_BASE_CAP };\
+    vqType vq = { .ptr = lc_malloc(VQ_BASE_CAP * sizeof(type)), .hd = 0, .tl = 0, .cap = VQ_BASE_CAP };\
     post;\
     return vq;\
 }
@@ -29,7 +30,7 @@
 #define vqAllocCapacityFunctionDefine(vqType, name) vqType name(size_t cap)
 #define vqAllocCapacityFunction(vqType, type, name, pre, post) vqType name(size_t cap) {\
     pre;\
-    vqType vq = { .ptr = malloc(cap * sizeof(type)), .hd = 0, .tl = 0, .cap = cap };\
+    vqType vq = { .ptr = lc_malloc(cap * sizeof(type)), .hd = 0, .tl = 0, .cap = cap };\
     post;\
     return vq;\
 }
@@ -42,7 +43,7 @@
     vq->ptr[vq->tl] = el;\
     vq->tl = (vq->tl + 1) % vq->cap;\
     if (vq->hd >= vq->tl) {\
-        vq->ptr = realloc(vq->ptr, 2 * vq->cap * sizeof(type));\
+        vq->ptr = lc_realloc(vq->ptr, 2 * vq->cap * sizeof(type));\
         memcpy(vq->ptr + vq->cap, vq->ptr, vq->tl * sizeof(type));\
         vq->tl += vq->cap;\
         vq->cap *= 2;\
@@ -91,7 +92,7 @@
         foreach;\
         memset(&el, 0, 0);\
     }\
-    free(vq.ptr);\
+    lc_free(vq.ptr);\
     post;\
     return;\
 }

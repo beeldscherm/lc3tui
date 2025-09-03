@@ -1,3 +1,4 @@
+#include "lc3/lib/config.h"
 #include "lc3/lc3.h"
 
 
@@ -9,5 +10,10 @@ int main(int argc, char **argv) {
 
     LC3_DestroyTermInterface(tui);
     LC3_DestroySimInstance(sim);
+
+    #if DO_LEAK_CHECK
+    lc_summary();
+    #endif
+
     return 0;
 }

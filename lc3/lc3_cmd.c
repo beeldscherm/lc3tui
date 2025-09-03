@@ -1,7 +1,8 @@
 #include "lc3_cmd.h"
 #include "lib/optional.h"
 #include <ctype.h>
-#include <string.h>
+#include "lib/lc.h"
+#include "lib/lc.h"
 
 // Required format for a commmand function, local to this file
 #define LC3_CMD_FN(name) static int (name)(LC3_TermInterface *tui, LC3_SimInstance *sim, int argc, const char **argv)
@@ -601,7 +602,7 @@ void LC3_ExecuteCommand(LC3_TermInterface *tui, const char *cmd) {
         return;
     }
 
-    char *copy = malloc(len);
+    char *copy = lc_malloc(len);
     memcpy(copy, cmd, len);
 
     char *token = strtok(copy, " ;,|");
@@ -618,10 +619,10 @@ void LC3_ExecuteCommand(LC3_TermInterface *tui, const char *cmd) {
         for (; (token = strtok(NULL, " ;,|")); addArgument(&argv, token));
 
         func(tui, tui->sim, argv.sz, argv.ptr);
-        free(argv.ptr);
+        lc_free(argv.ptr);
     } else {
         LC3_ShowMessage(tui, "unknown command", true);
     }
 
-    free(copy);
+    lc_free(copy);
 }

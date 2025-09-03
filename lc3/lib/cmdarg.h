@@ -20,12 +20,12 @@ typedef struct ca_info ca_info;
 
 /* 
  * Creates and initializes a new ca_config struct
- * When done, this struct should be free'd using ca_free_config
+ * When done, this struct should be lc_free'd using ca_free_config
  */
 ca_config *ca_alloc_config();
 
 /*
- * Free ca_config struct
+ * lc_free ca_config struct
  * This struct should have been previously allocated usiong ca_alloc_config
  */
 void ca_free_config(ca_config *cfg);
@@ -50,13 +50,13 @@ void ca_set_hasv(ca_config *cfg, const char *flag_name);
  * Parse flags based on provided configuration
  * Any unknown arguments (not defined as flags) will be stored as literals
  * Returns a ca_info struct containing relevant information about the parsed flags
- * When not needed anymore, the struct should be free'd using ca_free_info
+ * When not needed anymore, the struct should be lc_free'd using ca_free_info
  * This function does not modify argv
  */
 ca_info *ca_parse(ca_config *cfg, int argc, char **argv);
 
 /*
- * Free ca_info struct
+ * lc_free ca_info struct
  * This struct should first have been allocated by the ca_parse function
  */
 void ca_free_info(ca_info *info);

@@ -1,5 +1,6 @@
 #include "cmdarg.h"
 #include "va_template.h"
+#include "lc.h"
 
 
 // Returns an allocated copy of str, or NULL if str is NULL
@@ -10,17 +11,17 @@ static char *strdup(const char *str) {
 
     int l = strlen(str) + 1;
 
-    char *ret = malloc(l);
+    char *ret = lc_malloc(l);
     memcpy(ret, str, l);
 
     return ret;
 }
 
 
-// Free if nonnull
+// lc_free if nonnull
 static void _free_nn(void *ptr) {
     if (ptr) {
-        free(ptr);
+        lc_free(ptr);
     }
 }
 
@@ -54,7 +55,7 @@ vaFreeFunction(_ca_fe_arr, _ca_flag_entry, _ca_fe_arr_free_info, _free_nn(el.nam
 vaTypedef(char *, _ca_str_arr);
 vaAllocFunction(_ca_str_arr, char *, _ca_str_arr_alloc,,)
 vaAppendFunction(_ca_str_arr, char *, _ca_str_arr_add,,)
-vaFreeFunction(_ca_str_arr, char *, _ca_str_arr_free, free(el),,)
+vaFreeFunction(_ca_str_arr, char *, _ca_str_arr_free, lc_free(el),,)
 
 
 // ca_config stores a list of flags
@@ -72,7 +73,7 @@ struct ca_info {
 
 
 ca_config *ca_alloc_config() {
-    ca_config *ret = malloc(sizeof(ca_config));
+    ca_config *ret = lc_malloc(sizeof(ca_config));
     ret->entries = _ca_fe_arr_alloc();
     return ret;
 }
@@ -80,14 +81,14 @@ ca_config *ca_alloc_config() {
 
 void ca_free_config(ca_config *cfg) {
     _ca_fe_arr_free_config(cfg->entries);
-    free(cfg);
+    lc_free(cfg);
 }
 
 
 void ca_free_info(ca_info *info) {
     _ca_fe_arr_free_info(info->flags);
     _ca_str_arr_free(info->literals);
-    free(info);
+    lc_free(info);
 }
 
 
@@ -134,8 +135,8 @@ static void _ca_split(const char *flag, char **name, char **val) {
         return;
     }
 
-    (*name) = malloc(name_len + 1);
-    (*val)  = malloc(val_len  + 1);
+    (*name) = lc_malloc(name_len + 1);
+    (*val)  = lc_malloc(val_len  + 1);
 
     memcpy(*name, flag, name_len);
     memcpy(*val, eq + 1, val_len + 1);
@@ -169,7 +170,7 @@ void ca_set_hasv(ca_config *cfg, const char *flag_name) {
 ca_info *ca_parse(ca_config *cfg, int argc, char **argv) {
     qsort(cfg->entries.ptr, cfg->entries.sz, sizeof(_ca_flag_entry), _e_cmp_fn);
 
-    ca_info *ret = malloc(sizeof(ca_info));
+    ca_info *ret = lc_malloc(sizeof(ca_info));
     ret->flags = _ca_fe_arr_alloc();
     ret->literals = _ca_str_arr_alloc();
     ret->flag_bits = 0L;
