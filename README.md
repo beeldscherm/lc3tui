@@ -83,3 +83,5 @@ Please create an issue if you encounter any bugs!
 - [ ] "char" number format
 - [ ] Some more keybinds
 - [ ] Saving/loading entire simulator state
+- [ ] PSR and other LC3 details
+- [ ] CLI/headless mode

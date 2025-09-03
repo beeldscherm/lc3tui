@@ -1,7 +1,7 @@
 #include "lc3_sim.h"
 #include "lc3_cmd.h"
 #include "lib/va_template.h"
-#include "lib/lc.h"
+#include "lib/leakcheck/lc.h"
 
 #define free_nn(x) if (x != NULL) { lc_free(x); }
 #define LC3_HIST_MAX (8000)

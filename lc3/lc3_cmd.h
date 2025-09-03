@@ -1,5 +1,5 @@
 #pragma once
-#include "lib/config.h"
+#include "config.h"
 #include "lc3_tui.h"
 
 /*

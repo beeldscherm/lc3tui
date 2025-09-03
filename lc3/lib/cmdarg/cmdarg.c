@@ -1,6 +1,6 @@
 #include "cmdarg.h"
-#include "va_template.h"
-#include "lc.h"
+#include "../va_template.h"
+#include "../leakcheck/lc.h"
 
 
 // Returns an allocated copy of str, or NULL if str is NULL

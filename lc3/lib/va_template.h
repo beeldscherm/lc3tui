@@ -1,6 +1,6 @@
 #pragma once
 #include <stdlib.h> // IWYU pragma: keep
-#include "lc.h"
+#include "leakcheck/lc.h"
 
 #ifndef VA_BASE_CAP
 #define VA_BASE_CAP (8)

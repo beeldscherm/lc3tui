@@ -1,5 +1,5 @@
-#include "lc3/lib/config.h"
-#include "lc3/lc3.h"
+#include "lc3/config.h"
+#include "lc3/lc3_tui.h"
 
 
 int main(int argc, char **argv) {

@@ -1,5 +1,5 @@
 #pragma once
-#include "lib/config.h"
+#include "config.h"
 
 #include <stdbool.h>
 #include <curses.h>

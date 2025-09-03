@@ -1,7 +1,7 @@
 #include "lc3_tui.h"
 #include "lc3_cmd.h"
 #include <sys/time.h>
-#include "lib/lc.h"
+#include "lib/leakcheck/lc.h"
 
 
 #define CMD_LEN_MAX (256)

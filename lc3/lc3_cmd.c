@@ -1,8 +1,7 @@
 #include "lc3_cmd.h"
 #include "lib/optional.h"
 #include <ctype.h>
-#include "lib/lc.h"
-#include "lib/lc.h"
+#include "lib/leakcheck/lc.h"
 
 // Required format for a commmand function, local to this file
 #define LC3_CMD_FN(name) static int (name)(LC3_TermInterface *tui, LC3_SimInstance *sim, int argc, const char **argv)

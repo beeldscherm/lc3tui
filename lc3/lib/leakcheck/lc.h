@@ -1,5 +1,5 @@
 #pragma once
-#include "config.h"
+#include "../../config.h"
 
 #if DO_LEAK_CHECK
 #include <stdlib.h>
