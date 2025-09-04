@@ -2,6 +2,9 @@
 
 LC3 simulator with a simple terminal UI, written in C
 
+![alt text](screenshots/1.png)
+*TUI with loaded assembly (with debug info), PC and a breakpoint visible, some output and queued input. Registers have already been modified*
+
 
 ## Getting Started
 
