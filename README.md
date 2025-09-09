@@ -85,5 +85,4 @@ Please create an issue if you encounter any bugs!
 - [ ] Read functions for other LC3 file formats
 - [ ] Some more keybinds
 - [ ] Saving/loading entire simulator state
-- [ ] PSR and other LC3 details
 - [ ] CLI/headless mode

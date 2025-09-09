@@ -14,6 +14,11 @@ static String readString(FILE *fp) {
 }
 
 
+static void printString(FILE *fp, String str) {
+    fwrite(str.ptr, sizeof(char), str.sz + 1, fp);
+}
+
+
 // Load LC3A executable (.lc3)
 static void loadExecutableLC3A(LC3_SimInstance *sim, FILE *fp) {
     enum {
@@ -97,3 +102,32 @@ void LC3_LoadExecutable(LC3_SimInstance *sim, const char *filename) {
     fclose(fp);
 }
 
+
+void LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename) {
+    FILE *fp = fopen(filename, "wb");
+
+    if (fp == NULL) {
+        sim->error = "Failed to open file!";
+        return;
+    }
+
+    // Save some space in case any variables are added
+    uint8_t buffer[48];
+    memcpy(buffer, &sim->reg, sizeof(LC3_Registers));
+
+    fwrite(buffer, 1, sizeof(buffer), fp);
+    // TODO Add some kind of RLE to reduce file size
+    fwrite(sim->memory, sizeof(LC3_MemoryCell), LC3_MEM_SIZE, fp);
+    fwrite(&sim->debug.sz, sizeof(size_t), 1, fp);
+
+    for (size_t i = 0; i < sim->debug.sz; i++) {
+        printString(fp, sim->debug.ptr[i]);
+    }
+
+    // Other variables
+    fwrite(&sim->flags, sizeof(uint32_t), 1, fp);
+    fwrite(&sim->counter, sizeof(size_t), 1, fp);
+    fwrite(&sim->c2, sizeof(size_t), 1, fp);
+
+    fclose(fp);
+}

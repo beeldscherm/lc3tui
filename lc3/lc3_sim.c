@@ -1,5 +1,4 @@
 #include "lc3_sim.h"
-#include "lc3_cmd.h"
 #include "lib/va_template.h"
 #include "lib/leakcheck/lc.h"
 
@@ -44,7 +43,7 @@ LC3_SimInstance LC3_CreateSimInstance() {
     LC3_SimInstance ret = {
         .memory  = lc_calloc(LC3_MEM_SIZE, sizeof(LC3_MemoryCell)),
         .debug   = newStringArray(),
-        .reg     = {.PC = 0x3000},
+        .reg     = {.PC = 0x3000, .PSR = 0x8000},
         .flags   = LC3_SIM_REDIR_TRAP | LC3_SIM_HALTED,
         .counter = 0,
         .c2      = 0,
@@ -352,9 +351,9 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
 
     // Start of interrupt
     state49:
-        // TODO PRIORITY
+        sim->reg.PSR = (sim->reg.PSR & 0xF8FF) | ((uint16_t)sim->reg.INTP << 8);
         interrupt(0x01, sim->reg.INTV);
-    
+
     // Save SSP, load USP
     state59:
         sim->reg.Saved_SSP = sim->reg.reg[6];

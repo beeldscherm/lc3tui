@@ -1,6 +1,4 @@
 #pragma once
-#include "config.h"
-
 #include <stdbool.h>
 #include <curses.h>
 #include "lc3_sim.h"

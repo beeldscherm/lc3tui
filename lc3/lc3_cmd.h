@@ -1,5 +1,4 @@
 #pragma once
-#include "config.h"
 #include "lc3_tui.h"
 
 /*
