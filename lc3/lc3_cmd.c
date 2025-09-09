@@ -2,6 +2,7 @@
 #include "lib/optional.h"
 #include <ctype.h>
 #include "lib/leakcheck/lc.h"
+#include "lc3_io.h"
 
 // Required format for a commmand function, local to this file
 #define LC3_CMD_FN(name) static int (name)(LC3_TermInterface *tui, LC3_SimInstance *sim, int argc, const char **argv)

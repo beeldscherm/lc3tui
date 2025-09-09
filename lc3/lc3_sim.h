@@ -115,12 +115,6 @@ void LC3_DestroySimInstance(LC3_SimInstance sim);
 void LC3_ExecuteInstruction(LC3_SimInstance *sim);
 
 /*
- * Load an LC3 executable into memory
- * Currently, only the LC3A executable format (.lc3) is implemented
- */
-void LC3_LoadExecutable(LC3_SimInstance *sim, const char *filename);
-
-/*
  * Run until breakpoint, halted or maximum steps
  * Sets the LC3_SIM_HALTED flag afterwards
  */
