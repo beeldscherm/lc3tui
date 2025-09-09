@@ -119,7 +119,7 @@ void LC3_DestroyTermInterface(LC3_TermInterface tui) {
 #define BOX_PAD (2)
 
 #define REG_VIEW_W() (24)
-#define REG_VIEW_H() (10)
+#define REG_VIEW_H() (13)
 
 #define OUT_VIEW_W() ((tui->cols) - (3 * BOX_PAD))
 #define OUT_VIEW_H() ((tui->rows / 5))
@@ -381,12 +381,12 @@ static void displaySimulator(LC3_TermInterface *tui) {
         );
     }
 
-    mvwprintw(
-        tui->regView,  9, 1, " CC | %c%i%c%i%c%i",
-        CC_CHAR(0x4, 'N', '.'), CC_CHAR(0x4, 1, 0),     CC_CHAR(0x2, 'Z', '.'),
-        CC_CHAR(0x2, 1, 0),     CC_CHAR(0x1, 'P', '.'), CC_CHAR(0x1, 1, 0)
-    );
-    mvwprintw(tui->regView, 10, 1, " PC | 0x%04X", (uint16_t)sim->reg.PC);
+    mvwprintw(tui->regView,  9, 1, "PSR | 0x%04X", sim->reg.PSR);
+    mvwprintw(tui->regView, 10, 1, " CC | %c %c %c ", CC_CHAR(0x4, 'N', '.'), CC_CHAR(0x2, 'Z', '.'), CC_CHAR(0x1, 'P', '.'));
+
+    mvwprintw(tui->regView, 11, 1, " PC | 0x%04X", sim->reg.PC);
+    mvwprintw(tui->regView, 12, 1, "MAR | 0x%04X", sim->reg.MAR);
+    mvwprintw(tui->regView, 13, 1, "MDR | 0x%04X", (uint16_t)sim->reg.MDR);
 
     // Draw input view
     werase(tui->inView);

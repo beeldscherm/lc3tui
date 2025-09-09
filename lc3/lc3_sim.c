@@ -177,8 +177,7 @@ int fakeTRAP(LC3_SimInstance *sim, uint8_t code) {
                     return 1;
         case 0x24:  for (uint16_t r0 = R(0); MEM(r0); checkedPutChar(sim, MEM(r0) >> 8), putchar(MEM(r0) & 0xFF), r0++);;
                     return 1;
-        case 0x25:  sim->flags |= LC3_SIM_HALTED;
-                    return 1;
+        case 0x25:  return -1;
         default:    return 0;
     }
 }
@@ -267,6 +266,10 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
 
         sim->reg.PC++;
         interrupt(0x00, (sim->reg.IR & 0x00FF));
+    
+    state16:
+        sim->memory[sim->reg.MAR].value = sim->reg.MDR;
+        goto done;
 
     // Start of instruction cycle
     state18:
@@ -277,8 +280,8 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
     
     // End of store instructions
     state23:
-        memWrite(sim, sim->reg.MAR, R(REG(INSTR, 4)));
-        goto done;
+        sim->reg.MDR = R(REG(INSTR, 4));
+        gotoIfElse((_ACV()), state60, state16);
     
     // Continuation of LDI
     state24:

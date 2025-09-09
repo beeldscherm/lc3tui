@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <pthread.h>
 #include "lib/va_template.h"
 #include "lib/vq_template.h"
 
