@@ -1,4 +1,5 @@
 #include "lc3_sim.h"
+#include "lc3_cmd.h"
 #include "lib/va_template.h"
 #include "lib/leakcheck/lc.h"
 
@@ -136,6 +137,53 @@ void memWrite(LC3_SimInstance *sim, uint16_t addr, int16_t val) {
     gotoIfElse(sim->reg.MDR & 0x8000, state45, state37)
 
 
+// Read a character if possible
+static int checkedReadChar(LC3_SimInstance *sim) {
+    if (sim->inputs.hd == sim->inputs.tl) {
+        return 1;
+    }
+
+    R(0) = fetchInput(&sim->inputs);
+    return 0;
+}
+
+
+// Put character into output(s)
+static void checkedPutChar(LC3_SimInstance *sim, char c) {
+    if (sim->outf != NULL) {
+        fputc(c, sim->outf);
+    }
+
+    for (const char *cstr = charString(c); cstr && cstr[0]; cstr++) {
+        addchar(&sim->output, cstr[0]);
+    }
+
+    if (sim->output.sz > LC3_OUT_MAX) {
+        keepLast(sim->output, sizeof(char), (LC3_OUT_MAX / 2),);
+    }
+}
+
+
+// Simulate TRAP
+bool fakeTRAP(LC3_SimInstance *sim, uint8_t code) {
+    switch (((sim->flags & LC3_SIM_REDIR_TRAP) != 0) * code) {
+        case 0x00:  return false;
+        case 0x23:
+        case 0x20:  checkedReadChar(sim);
+                    return true;
+        case 0x21:  checkedPutChar(sim, R(0));
+                    return true;
+        case 0x22:  for (uint16_t r0 = R(0); MEM(r0); checkedPutChar(sim, MEM(r0) & 0xFF), r0++);;
+                    return true;
+        case 0x24:  for (uint16_t r0 = R(0); MEM(r0); checkedPutChar(sim, MEM(r0) >> 8), putchar(MEM(r0) & 0xFF), r0++);;
+                    return true;
+        case 0x25:  sim->flags |= LC3_SIM_HALTED;
+                    return true;
+        default:    return false;
+    }
+}
+
+
 // Execute instruction at the current PC
 void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
     // Pre
@@ -183,6 +231,10 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
     
     // Start of TRAP
     state15:
+        if (fakeTRAP(sim, sim->reg.IR & 0x00FF)) {
+            goto done;
+        }
+
         sim->reg.PC++;
         interrupt(0x00, (sim->reg.IR & 0x00FF));
 
