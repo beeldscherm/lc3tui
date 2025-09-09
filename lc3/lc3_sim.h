@@ -58,7 +58,7 @@ typedef struct LC3_Registers {
     int16_t reg[8]; // General-purpose registers
     uint16_t MAR;
     int16_t MDR;
-    int16_t IR;
+    uint16_t IR;
     uint16_t PSR;
     uint8_t Table;
     uint8_t Vector;

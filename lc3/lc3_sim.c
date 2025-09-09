@@ -110,7 +110,7 @@ void memWrite(LC3_SimInstance *sim, uint16_t addr, int16_t val) {
 #define REG(n, i) (((n) >> ((sizeof(uint16_t) * 8) - (i) - 3)) & 0x7)
 
 // Set condition codes based on value of n
-#define CC(n) tmp = (int16_t)(n); sim->reg.PSR = (sim->reg.PSR & 0xFFF8) | (((tmp < 0) << 2) | ((tmp == 0) << 1) | (tmp > 0));
+#define SET_CC(n) tmp = (int16_t)(n); sim->reg.PSR = (sim->reg.PSR & 0xFFF8) | (((tmp < 0) << 2) | ((tmp == 0) << 1) | (tmp > 0));
 
 // Get memory value
 #define MEM(n) sim->memory[(n)].value
@@ -124,6 +124,7 @@ void memWrite(LC3_SimInstance *sim, uint16_t addr, int16_t val) {
 // Get memory cell of PC
 #define MEM_PC sim->memory[_PC]
 
+#define _ACV() sim->reg.ACV = (sim->reg.PSR & (1 << 15)) && (sim->reg.MAR < 0x3000 || sim->reg.MAR >= 0xFE00)
 
 #define gotoIfElse(condition, T, F) if (condition) { goto T; } else { goto F; }
 #define INSTR (sim->reg.IR)
@@ -140,11 +141,11 @@ void memWrite(LC3_SimInstance *sim, uint16_t addr, int16_t val) {
 // Read a character if possible
 static int checkedReadChar(LC3_SimInstance *sim) {
     if (sim->inputs.hd == sim->inputs.tl) {
-        return 1;
+        return -1;
     }
 
     R(0) = fetchInput(&sim->inputs);
-    return 0;
+    return 1;
 }
 
 
@@ -165,21 +166,20 @@ static void checkedPutChar(LC3_SimInstance *sim, char c) {
 
 
 // Simulate TRAP
-bool fakeTRAP(LC3_SimInstance *sim, uint8_t code) {
+int fakeTRAP(LC3_SimInstance *sim, uint8_t code) {
     switch (((sim->flags & LC3_SIM_REDIR_TRAP) != 0) * code) {
-        case 0x00:  return false;
+        case 0x00:  return 0;
         case 0x23:
-        case 0x20:  checkedReadChar(sim);
-                    return true;
+        case 0x20:  return checkedReadChar(sim);
         case 0x21:  checkedPutChar(sim, R(0));
-                    return true;
+                    return 1;
         case 0x22:  for (uint16_t r0 = R(0); MEM(r0); checkedPutChar(sim, MEM(r0) & 0xFF), r0++);;
-                    return true;
+                    return 1;
         case 0x24:  for (uint16_t r0 = R(0); MEM(r0); checkedPutChar(sim, MEM(r0) >> 8), putchar(MEM(r0) & 0xFF), r0++);;
-                    return true;
+                    return 1;
         case 0x25:  sim->flags |= LC3_SIM_HALTED;
-                    return true;
-        default:    return false;
+                    return 1;
+        default:    return 0;
     }
 }
 
@@ -220,10 +220,40 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
     Converter cast = {0};
     goto state18;
 
+    // LD instruction
+    state2:
+        sim->reg.MAR = _PC + (cast.pc_offset9 = INSTR);
+        gotoIfElse((_ACV()), state60, state25);
+    
+    // ST instruction
+    state3:
+        sim->reg.MAR = _PC + (cast.pc_offset9 = INSTR);
+        gotoIfElse((_ACV()), state60, state23);
+    
+    // LDR instruction
+    state6:
+        sim->reg.MAR = (uint16_t)R(REG(INSTR, 7)) + (cast.offset6 = INSTR);
+        gotoIfElse((_ACV()), state60, state25);
+    
+    // STR instruction
+    state7:
+        sim->reg.MAR = (uint16_t)R(REG(INSTR, 7)) + (cast.offset6 = INSTR);
+        gotoIfElse((_ACV()), state60, state23);
+
     // Start of RTI instruction
     state8:
         sim->reg.MAR = sim->reg.reg[6];
         gotoIfElse(sim->reg.PSR & 0x8000, state44, state36);
+    
+    // LDI instruction
+    state10:
+        sim->reg.MAR = _PC + (cast.pc_offset9 = INSTR);
+        gotoIfElse((_ACV()), state60, state24);
+    
+    // STI instruction
+    state11:
+        sim->reg.MAR = _PC + (cast.pc_offset9 = INSTR);
+        gotoIfElse((_ACV()), state60, state29);
     
     // Invalid opcode
     state13:
@@ -231,8 +261,8 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
     
     // Start of TRAP
     state15:
-        if (fakeTRAP(sim, sim->reg.IR & 0x00FF)) {
-            goto done;
+        if ((tmp = fakeTRAP(sim, sim->reg.IR & 0x00FF))) {
+            gotoIfElse(tmp > 0, done, failure);
         }
 
         sim->reg.PC++;
@@ -242,51 +272,64 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
     state18:
         sim->reg.MAR = sim->reg.PC;
         sim->reg.PC++;
-        sim->reg.ACV = (sim->reg.PSR & (1 << 15)) && (sim->reg.MAR < 0x3000 || sim->reg.MAR >= 0xFE00);
+        _ACV();
         gotoIfElse(sim->reg.INT, state49, state33);
+    
+    // End of store instructions
+    state23:
+        memWrite(sim, sim->reg.MAR, R(REG(INSTR, 4)));
+        goto done;
+    
+    // Continuation of LDI
+    state24:
+        sim->reg.MAR = memRead(sim, sim->reg.MAR);
+        gotoIfElse((_ACV()), state60, state25);
+    
+    // End of load instructions
+    state25:
+        SET_CC(R(REG(INSTR, 4)) = memRead(sim, sim->reg.MAR));
+        goto done;
 
     // Continuation of regular instruction cycle
     state28: {
         sim->reg.MDR = sim->memory[sim->reg.MAR].value;             // 28
         sim->reg.IR = sim->reg.MDR;                                 // 30
-        sim->reg.BEN = (((sim->reg.IR >> 9) & _CC) > 0);    // 32
+        sim->reg.BEN = (((sim->reg.IR >> 9) & _CC) > 0);            // 32
         
-        switch ((enum OpCode)(sim->reg.IR >> 12)) {
-            case OP_BR:     _PC += (((INSTR >> 9) & _CC) != 0) * (cast.pc_offset9 = INSTR);
+        switch (sim->reg.IR >> 12) {
+            case OP_BR:     _PC += (sim->reg.BEN) * (cast.pc_offset9 = INSTR);
                             break;
-            case OP_ADD:    CC(R(REG(INSTR, 4)) = R(REG(INSTR, 7)) + ((INSTR & 0x0020) ? (cast.imm5 = INSTR) : R(INSTR & 0x0007)));
+            case OP_ADD:    SET_CC(R(REG(INSTR, 4)) = R(REG(INSTR, 7)) + ((INSTR & 0x0020) ? (cast.imm5 = INSTR) : R(INSTR & 0x0007)));
                             break;
-            case OP_LD:     CC(R(REG(INSTR, 4)) = MEM(_PC + (cast.pc_offset9 = INSTR) + 1));
-                            break;
-            case OP_ST:     SAVE_MEM(_PC + (cast.pc_offset9 = INSTR) + 1);
-                            MEM(_PC + (cast.pc_offset9 = INSTR) + 1) = R(REG(INSTR, 4));
-                            break;
-            case OP_JSR:    R(7) = _PC + 1;
+            case OP_LD:     goto state2;
+            case OP_ST:     goto state3;
+            case OP_JSR:    R(7) = _PC;
                             _PC = (INSTR & 0x0800) ? (_PC + (cast.pc_offset11 = INSTR)) : (R(REG(INSTR, 7)) - 1);
                             break;
-            case OP_AND:    CC(R(REG(INSTR, 4)) = R(REG(INSTR, 7)) & ((INSTR & 0x0020) ? (cast.imm5 = INSTR) : R(INSTR & 0x0007)));
-                            break;;
-            case OP_LDR:    CC(R(REG(INSTR, 4)) = MEM((uint16_t)R(REG(INSTR, 7)) + (cast.offset6 = INSTR)));
+            case OP_AND:    SET_CC(R(REG(INSTR, 4)) = R(REG(INSTR, 7)) & ((INSTR & 0x0020) ? (cast.imm5 = INSTR) : R(INSTR & 0x0007)));
                             break;
-            case OP_STR:    SAVE_MEM((uint16_t) R(REG(INSTR, 7)) + (cast.offset6 = INSTR));
-                            MEM((uint16_t) R(REG(INSTR, 7)) + (cast.offset6 = INSTR)) = R(REG(INSTR, 4));
+            case OP_LDR:    goto state6;
+            case OP_STR:    goto state7;
             case OP_RTI:    goto state8;
-            case OP_NOT:    CC(R(REG(INSTR, 4)) = ~R(REG(INSTR, 7)));
+            case OP_NOT:    SET_CC(R(REG(INSTR, 4)) = ~R(REG(INSTR, 7)));
                             break;
-            case OP_LDI:    CC(R(REG(INSTR, 4)) = MEM((uint16_t)MEM(_PC + (cast.pc_offset9 = INSTR) + 1)));
-                            break;;
-            case OP_STI:    MEM((uint16_t)MEM(_PC + (cast.pc_offset9 = INSTR) + 1)) = R(REG(INSTR, 4));
-                            break;
-            case OP_JMP:    _PC = R(REG(INSTR, 7)) - 1;
+            case OP_LDI:    goto state10;
+            case OP_STI:    goto state11;
+            case OP_JMP:    _PC = R(REG(INSTR, 7));
                             break;
             case OP_NOOP:   goto state13;
-            case OP_LEA:    CC(R(REG(INSTR, 4)) = _PC + (cast.pc_offset9 = INSTR) + 1);
+            case OP_LEA:    R(REG(INSTR, 4)) = _PC + (cast.pc_offset9 = INSTR);
                             break;
             case OP_TRAP:   goto state15;
         }
 
         goto done;
     }
+
+    // Continuation of STI
+    state29:
+        sim->reg.MAR = memRead(sim, sim->reg.MAR);
+        gotoIfElse((_ACV()), state60, state23);
 
     // Access violation check
     state33:
@@ -339,6 +382,14 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
     done:
         sim->counter++;
         addState(&sim->history, initial);
+        goto end;
+
+    failure:
+        sim->flags |= LC3_SIM_HALTED;
+        sim->reg = initial.reg;
+        goto end;
+
+    end:
         return;
 }
 
