@@ -103,6 +103,35 @@ void LC3_LoadExecutable(LC3_SimInstance *sim, const char *filename) {
 }
 
 
+static void writeMemory(LC3_SimInstance *sim, FILE *fp) {
+    LC3_MemoryCell empty = {0, 0, 0, 0};
+    size_t chunkCounter = 0;
+
+    for (int i = 0; i < LC3_MEM_SIZE; i++) {
+        bool isEmpty = (memcmp(&empty, &sim->memory[i], sizeof(LC3_MemoryCell)) == 0);
+
+        if (isEmpty) {
+            chunkCounter++;
+        } else {
+            if (chunkCounter > 0) {
+                fwrite(&empty, sizeof(LC3_MemoryCell), 1, fp);
+                fwrite(&chunkCounter, sizeof(size_t), 1, fp);
+                chunkCounter = 0;
+            }
+
+            fwrite(&sim->memory[i], sizeof(LC3_MemoryCell), 1, fp);
+        }
+    }
+
+    if (chunkCounter > 0) {
+        fwrite(&empty, sizeof(LC3_MemoryCell), 1, fp);
+        fwrite(&chunkCounter, sizeof(size_t), 1, fp);
+    }
+
+    return;
+}
+
+
 void LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename) {
     FILE *fp = fopen(filename, "wb");
 
@@ -112,12 +141,11 @@ void LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename) {
     }
 
     // Save some space in case any variables are added
-    uint8_t buffer[48];
+    uint8_t buffer[48] = {0};
     memcpy(buffer, &sim->reg, sizeof(LC3_Registers));
 
     fwrite(buffer, 1, sizeof(buffer), fp);
-    // TODO Add some kind of RLE to reduce file size
-    fwrite(sim->memory, sizeof(LC3_MemoryCell), LC3_MEM_SIZE, fp);
+    writeMemory(sim, fp);
     fwrite(&sim->debug.sz, sizeof(size_t), 1, fp);
 
     for (size_t i = 0; i < sim->debug.sz; i++) {
