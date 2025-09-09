@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <pthread.h>
-#include "lib/va_template.h"
 #include "lib/vq_template.h"
+#include "lc3_util.h"
 
 #ifdef __GNUC__
 #define __packed__ __attribute__((packed))
@@ -16,19 +16,6 @@
 
 // Amount of memory cells in the LC3
 #define LC3_MEM_SIZE (65536)
-
-// Variable-length string(array) type
-vaTypedef(char, String);
-vaTypedef(String, StringArray);
-
-// String functions
-vaAllocFunctionDefine(String, newString);
-vaAppendFunctionDefine(String, char, addchar);
-
-// String array functions
-vaAllocFunctionDefine(StringArray, newStringArray);
-vaAppendFunctionDefine(StringArray, String, addString);
-vaFreeFunctionDefine(StringArray, freeStringArray);
 
 // Queue for inputs
 vqTypedef(char, InputQueue);

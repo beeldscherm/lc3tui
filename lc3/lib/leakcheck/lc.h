@@ -1,8 +1,8 @@
 #pragma once
+#include <stdlib.h> // IWYU pragma: keep
 #include "../../config.h"
 
 #if DO_LEAK_CHECK
-#include <stdlib.h>
 
 void lc_summary(void);
 void *_lc_alloc_internal(size_t size, int reset, const char *file, size_t line);

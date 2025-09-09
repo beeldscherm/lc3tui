@@ -15,23 +15,6 @@ typedef struct Converter {
     signed pc_offset11: 11;
 } Converter;
 
-// String functions
-vaAllocFunction(String, char, newString, ;, va.ptr[0] = '\0')
-vaClearFunction(String, clearString, ;, va->ptr[0] = '\0')
-
-vaAppendFunction(String, char, addchar,
-    // Tomfoolery to make the null terminator exist
-    va->ptr[va->sz] = el;
-    va->sz++;
-    el = '\0';
-    ,
-    va->sz--;
-)
-
-// String array functions
-vaAllocFunction(StringArray, String, newStringArray, ;, ;)
-vaAppendFunction(StringArray, String, addString, ;, ;)
-vaFreeFunction(StringArray, String, freeStringArray, lc_free(el.ptr), ;, ;)
 
 // History functions
 #define keepLast(arr, el_sz, n, foreach) \
