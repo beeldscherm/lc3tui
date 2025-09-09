@@ -128,10 +128,10 @@ OptInt parseRegister(LC3_SimInstance *sim, const char *str) {
     }
 
     if (toupper(str[0]) == 'R' && str[1] < '8' && str[1] >= '0') {
-        ret.value = sim->regs[str[1] - '0'];
+        ret.value = sim->reg.reg[str[1] - '0'];
         ret.set = true;
     } else if (toupper(str[0]) == 'P' && toupper(str[1]) == 'C') {
-        ret.value = sim->pc;
+        ret.value = sim->reg.PC;
         ret.set = true;
     }
 
@@ -171,8 +171,8 @@ LC3_CMD_FN(loadExecutable) {
         LC3_LoadExecutable(sim, argv[i]);
     }
 
-    if (!LC3_IsAddrDisplayed(tui, sim->pc)) {
-        tui->memViewStart = sim->pc;
+    if (!LC3_IsAddrDisplayed(tui, sim->reg.PC)) {
+        tui->memViewStart = sim->reg.PC;
     }
 
     if (sim->error != NULL) {
@@ -189,7 +189,7 @@ LC3_CMD_FN(loadExecutable) {
 // b[reak]p[oint] [location] ...
 LC3_CMD_FN(breakpoint) {
     if (argc == 0) {
-        sim->memory[sim->pc].breakpoint = !sim->memory[sim->pc].breakpoint;
+        sim->memory[sim->reg.PC].breakpoint = !sim->memory[sim->reg.PC].breakpoint;
         return 0;
     }
 
@@ -215,7 +215,7 @@ LC3_CMD_FN(setMemoryValue) {
         return 1;
     }
 
-    OptInt location = (argc > 1) ? parseVariable(sim, argv[0]) : fromInt(sim->pc);
+    OptInt location = (argc > 1) ? parseVariable(sim, argv[0]) : fromInt(sim->reg.PC);
 
     if (!location.set) {
         LC3_ShowMessage(tui, "invalid location", true);
@@ -250,10 +250,10 @@ LC3_CMD_FN(setRegister) {
     char c2 = toupper(argv[0][1]);
 
     if (value.set && c1 == 'R' && c2 < '8' && c2 >= '0' && inRange(value.value, INT16_MIN, UINT16_MAX)) {
-        sim->regs[(c2 - '0')] = value.value;
+        sim->reg.reg[(c2 - '0')] = value.value;
         return 0;
     } else if (value.set && c1 == 'P' && c2 == 'C' && inRange(value.value, 0, UINT16_MAX)) {
-        sim->pc = value.value;
+        sim->reg.PC = value.value;
         return 0;
     } else {
         LC3_ShowMessage(tui, "invalid argument", true);
@@ -287,14 +287,12 @@ LC3_CMD_FN(undoSteps) {
         sim->history.sz--;
         LC3_PrevState state = sim->history.ptr[sim->history.sz];
 
-        sim->pc = state.pc;
-        sim->cc = state.cc;
-        sim->regs[state.regLocation] = state.regValue;
+        sim->reg = state.reg;
         sim->memory[state.memoryLocation].value = state.memoryValue;
     }
 
-    if (!LC3_IsAddrDisplayed(tui, sim->pc)) {
-        tui->memViewStart = sim->pc;
+    if (!LC3_IsAddrDisplayed(tui, sim->reg.PC)) {
+        tui->memViewStart = sim->reg.PC;
     }
 
     return 0;
@@ -331,7 +329,7 @@ LC3_CMD_FN(makeSteps) {
 
     if (steps.set) {
         LC3_UntilBreakpoint(sim, steps.value);
-        tui->memViewStart = (LC3_IsAddrDisplayed(tui, sim->pc)) ? tui->memViewStart : sim->pc;
+        tui->memViewStart = (LC3_IsAddrDisplayed(tui, sim->reg.PC)) ? tui->memViewStart : sim->reg.PC;
         sim->flags |= LC3_SIM_HALTED;
     }
 
@@ -389,7 +387,7 @@ LC3_CMD_FN(restartDevice) {
 // Go to provided address, default PC
 // g[o] [N]
 LC3_CMD_FN(goToCell) {
-    OptInt addr = (argc > 0) ? parseVariable(sim, argv[0]) : fromInt(sim->pc);
+    OptInt addr = (argc > 0) ? parseVariable(sim, argv[0]) : fromInt(sim->reg.PC);
 
     if (addr.set && inRange(addr.value, INT16_MIN, UINT16_MAX)) {
         tui->memViewStart = (uint16_t)addr.value;

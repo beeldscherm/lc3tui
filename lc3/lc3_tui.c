@@ -59,7 +59,7 @@ LC3_TermInterface LC3_CreateTermInterface(LC3_SimInstance *sim) {
         .sim = sim,
         .cols = 0,
         .rows = 0,
-        .memViewStart = sim->pc,
+        .memViewStart = sim->reg.PC,
         .memView = NULL,
         .regView = NULL,
         .inView  = NULL,
@@ -290,8 +290,8 @@ static void handleInput(LC3_TermInterface *tui) {
             case '\n':      tui->sim->flags &= ~LC3_SIM_HALTED;
                             LC3_ExecuteInstruction(tui->sim);
                             tui->sim->flags |= LC3_SIM_HALTED;
-                            if (!LC3_IsAddrDisplayed(tui, tui->sim->pc)) {
-                                tui->memViewStart = tui->sim->pc;
+                            if (!LC3_IsAddrDisplayed(tui, tui->sim->reg.PC)) {
+                                tui->memViewStart = tui->sim->reg.PC;
                             }
                             break;
             case 'u':       LC3_ExecuteCommand(tui, "u");
@@ -312,7 +312,7 @@ void LC3_ShowMessage(LC3_TermInterface *tui, const char *msg, bool isError) {
 }
 
 
-#define CC_CHAR(n, t, f) (((sim->cc & n) != 0) ? t : f)
+#define CC_CHAR(n, t, f) ((((sim->reg.PSR & 7) & n) != 0) ? t : f)
 #define FMT_STR_LEN (20)
 
 
@@ -336,12 +336,12 @@ static void displaySimulator(LC3_TermInterface *tui) {
             wattron(tui->memView, COLOR_PAIR(1));
         }
 
-        if (i == sim->pc) {
+        if (i == sim->reg.PC) {
             wattron(tui->memView, COLOR_PAIR(2));
         }
 
         mvwprintw(
-            tui->memView, y, 2, formatStrings[tui->numDisplay], (i == sim->pc) ? '>' : ' ' , 
+            tui->memView, y, 2, formatStrings[tui->numDisplay], (i == sim->reg.PC) ? '>' : ' ' , 
             (uint16_t)i, (tui->numDisplay == LC3_NDISPLAY_INT) ? sim->memory[i].value : (uint16_t)sim->memory[i].value
         );
 
@@ -377,7 +377,7 @@ static void displaySimulator(LC3_TermInterface *tui) {
     for (int i = 0; i < 8; i++) {
         mvwprintw(
             tui->regView, i + 1, 1, regStrings[tui->numDisplay], i,
-            (tui->numDisplay == LC3_NDISPLAY_INT) ? sim->regs[i] : (uint16_t)sim->regs[i]
+            (tui->numDisplay == LC3_NDISPLAY_INT) ? sim->reg.reg[i] : (uint16_t)sim->reg.reg[i]
         );
     }
 
@@ -386,7 +386,7 @@ static void displaySimulator(LC3_TermInterface *tui) {
         CC_CHAR(0x4, 'N', '.'), CC_CHAR(0x4, 1, 0),     CC_CHAR(0x2, 'Z', '.'),
         CC_CHAR(0x2, 1, 0),     CC_CHAR(0x1, 'P', '.'), CC_CHAR(0x1, 1, 0)
     );
-    mvwprintw(tui->regView, 10, 1, " PC | 0x%04X", (uint16_t)sim->pc);
+    mvwprintw(tui->regView, 10, 1, " PC | 0x%04X", (uint16_t)sim->reg.PC);
 
     // Draw input view
     werase(tui->inView);
@@ -454,8 +454,8 @@ int LC3_RunTermInterface(LC3_TermInterface *tui) {
                 elapsed = (((current.tv_sec - start.tv_sec) * 1000000) + current.tv_usec - start.tv_usec);
             }
 
-            if (!LC3_IsAddrDisplayed(tui, tui->sim->pc)) {
-                tui->memViewStart = tui->sim->pc;
+            if (!LC3_IsAddrDisplayed(tui, tui->sim->reg.PC)) {
+                tui->memViewStart = tui->sim->reg.PC;
             }
         } else {
             tui->delay = 250;

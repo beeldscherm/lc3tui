@@ -52,14 +52,30 @@ typedef enum LC3_SimFlag {
 } LC3_SimFlag;
 
 
+// Register struct
+typedef struct LC3_Registers {
+    uint16_t PC;    // Program counter
+    int16_t reg[8]; // General-purpose registers
+    uint16_t MAR;
+    int16_t MDR;
+    int16_t IR;
+    uint16_t PSR;
+    uint8_t Table;
+    uint8_t Vector;
+    uint8_t INTV;
+    int16_t Saved_SSP;
+    int16_t Saved_USP;
+    bool ACV : 1;
+    bool INT : 1;
+    bool BEN : 1; 
+} LC3_Registers;
+
+
 // Previous state of the LC3 machine
 typedef struct LC3_PrevState {
-    uint16_t pc;                // PC value of this state
+    LC3_Registers reg;
     uint16_t memoryLocation;    // Which memory location was changed after this state
     int16_t  memoryValue;       // The value of that memory location
-    uint8_t  regLocation;       // Which register was changed after this state
-    int16_t  regValue;          // The value of that register
-    uint8_t  cc;                // Condition codes of this state
 } LC3_PrevState;
 
 // List of states
@@ -70,9 +86,7 @@ vaTypedef(LC3_PrevState, LC3_StateHistory);
 typedef struct LC3_SimInstance {
     LC3_MemoryCell *memory;     // List of LC3_MEM_SIZE LC3_MemoryCells
     StringArray debug;          // Debug strings
-    int16_t regs[8];            // Register values
-    uint16_t pc;                // PC
-    uint8_t  cc;                // Condition codes
+    LC3_Registers reg;          // Registers
     uint32_t flags;             // Combination of LC3_SimFlags
     size_t counter, c2;         // How many instructions the simulator has executed and a variable for commands
     const char *error;          // Error string (currently nearly unused)
