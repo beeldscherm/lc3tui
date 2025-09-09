@@ -11,6 +11,7 @@ typedef enum LC3_numDisplay {
     LC3_NDISPLAY_HEX  = 0,          // Hexadecimal, always padded to 4 digits
     LC3_NDISPLAY_UINT,              // Unsigned integer
     LC3_NDISPLAY_INT,               // Signed integer
+    LC3_NDISPLAY_CHAR,              // Characters
     LC3_NDISPLAY_MAX                // Required to be the last element for calculations
 } LC3_numDisplay;
 

@@ -25,4 +25,4 @@ vaFreeFunctionDefine(StringArray, freeStringArray);
  * For escape charactrs, its string representation is returned (e.g. "\\n")
  * Otherwise, the string "\\?" is returned
  */
- const char *charString(int ch);
+const char *charString(int ch);

@@ -316,15 +316,24 @@ void LC3_ShowMessage(LC3_TermInterface *tui, const char *msg, bool isError) {
 #define FMT_STR_LEN (20)
 
 
+static void printValue(LC3_TermInterface *tui, WINDOW *win, uint16_t value) {
+    switch (tui->numDisplay) {
+        case LC3_NDISPLAY_HEX:  wprintw(win, "0x%04X", value);
+                                break;
+        case LC3_NDISPLAY_UINT: wprintw(win, "%6hu", value);
+                                break;
+        case LC3_NDISPLAY_INT:  wprintw(win, "%6hi", (int16_t)value);
+                                break;
+        case LC3_NDISPLAY_CHAR: wprintw(win, "%3s%3s", charString(value >> 8), charString(value & 0xFF));
+                                break;
+        default: break;
+    }
+}
+
+
 static void displaySimulator(LC3_TermInterface *tui) {
     LC3_SimInstance *sim = tui->sim;
-
     resizeCheck(tui);
-
-    const char *formatStrings[LC3_NDISPLAY_MAX];
-    formatStrings[LC3_NDISPLAY_HEX]  = "%cx%04X | 0x%04X | ";
-    formatStrings[LC3_NDISPLAY_UINT] = "%cx%04X | %6hu | ";
-    formatStrings[LC3_NDISPLAY_INT]  = "%cx%04X | %6hi | ";
 
     // Draw memory view
     box(tui->memView, 0, 0);
@@ -340,13 +349,11 @@ static void displaySimulator(LC3_TermInterface *tui) {
             wattron(tui->memView, COLOR_PAIR(2));
         }
 
-        mvwprintw(
-            tui->memView, y, 2, formatStrings[tui->numDisplay], (i == sim->reg.PC) ? '>' : ' ' , 
-            (uint16_t)i, (tui->numDisplay == LC3_NDISPLAY_INT) ? sim->memory[i].value : (uint16_t)sim->memory[i].value
-        );
+        mvwprintw(tui->memView, y, 2, "%cx%04X | ", (i == sim->reg.PC) ? '>' : ' ', (uint16_t)i);
+        printValue(tui, tui->memView, sim->memory[i].value);
+        wprintw(tui->memView, " | ");
 
         for (int i = 0; i < max; waddch(tui->memView, ' '), i++);
-        ;
 
         if (sim->memory[i].hasDebug) {
             wmove(tui->memView, y, FMT_STR_LEN);
@@ -367,18 +374,11 @@ static void displaySimulator(LC3_TermInterface *tui) {
     }
 
     // Draw register view
-    const char *regStrings[LC3_NDISPLAY_MAX];
-    regStrings[LC3_NDISPLAY_HEX]  = " R%1i | 0x%04X";
-    regStrings[LC3_NDISPLAY_UINT] = " R%1i | %6hu";
-    regStrings[LC3_NDISPLAY_INT]  = " R%1i | %6hi";
-
     box(tui->regView, 0, 0);
 
     for (int i = 0; i < 8; i++) {
-        mvwprintw(
-            tui->regView, i + 1, 1, regStrings[tui->numDisplay], i,
-            (tui->numDisplay == LC3_NDISPLAY_INT) ? sim->reg.reg[i] : (uint16_t)sim->reg.reg[i]
-        );
+        mvwprintw(tui->regView, i + 1, 1, " R%1i | ", i);
+        printValue(tui, tui->regView, sim->reg.reg[i]);
     }
 
     mvwprintw(tui->regView,  9, 1, "PSR | 0x%04X", sim->reg.PSR);

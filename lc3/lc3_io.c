@@ -1,5 +1,5 @@
 #include "lc3_io.h"
-
+#include "lc3_util.h"
 
 
 // Read string from file
@@ -7,14 +7,9 @@ static String readString(FILE *fp) {
     String ret = newString();
 
     for (char c; fread(&c, 1, 1, fp) && c != '\0';) {
-        // These mess up the memory viewer
-        if (c == '\t') {
-            addchar(&ret, '\\');
-            addchar(&ret, 't');
-        } else {
-            addchar(&ret, c);
-        }
+        for (const char *str = charString(c); str[0]; addchar(&ret, str[0]), str++);
     }
+
     return ret;
 }
 

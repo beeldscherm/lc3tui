@@ -298,6 +298,8 @@ LC3_CMD_FN(setnumDisplay) {
                     break;
         case 'U':   tui->numDisplay = LC3_NDISPLAY_UINT;
                     break;
+        case 'C':   tui->numDisplay = LC3_NDISPLAY_CHAR;
+                    break;
         default:    LC3_ShowMessage(tui, "unknown number format", true);
                     break;
     }
