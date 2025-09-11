@@ -29,6 +29,7 @@ typedef struct LC3_TermInterface {
     int delay;                      // Character wait delay
     LC3_numDisplay numDisplay;      // Number display format
     bool running;                   // TUI exits once this turns false
+    bool headless;                  // Whether the TUI is running without graphics output
 } LC3_TermInterface;
 
 
@@ -36,7 +37,7 @@ typedef struct LC3_TermInterface {
  * Allocate terminal UI for simulator
  * After use, this should be destroyed using LC3_DestroyTermInterface()
  */
-LC3_TermInterface LC3_CreateTermInterface(LC3_SimInstance *sim);
+LC3_TermInterface LC3_CreateTermInterface(LC3_SimInstance *sim, int argc, char **argv);
 
 /*
  * Deallocate terminal UI

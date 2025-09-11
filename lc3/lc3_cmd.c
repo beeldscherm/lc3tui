@@ -251,6 +251,11 @@ LC3_CMD_FN(setRegister) {
 // run
 LC3_CMD_FN(startSimulation) {
     sim->flags &= ~LC3_SIM_HALTED;
+
+    if (tui->headless) {
+        LC3_UntilBreakpoint(sim, -1);
+    }
+
     return 0;
 }
 
@@ -314,6 +319,7 @@ LC3_CMD_FN(makeSteps) {
     OptInt steps = (argc > 0) ? parseVariable(sim, argv[0]) : fromInt(1);
 
     if (steps.set) {
+        sim->flags &= ~(LC3_SIM_HALTED);
         LC3_UntilBreakpoint(sim, steps.value);
         tui->memViewStart = (LC3_IsAddrDisplayed(tui, sim->reg.PC)) ? tui->memViewStart : sim->reg.PC;
         sim->flags |= LC3_SIM_HALTED;
@@ -581,7 +587,7 @@ void LC3_ExecuteCommand(LC3_TermInterface *tui, const char *cmd) {
 
     int len = strlen(cmd) + 1;
 
-    if (len < 0) {
+    if (len <= 0) {
         return;
     }
 
@@ -589,6 +595,12 @@ void LC3_ExecuteCommand(LC3_TermInterface *tui, const char *cmd) {
     memcpy(copy, cmd, len);
 
     char *token = strtok(copy, " ;,|");
+
+    if (token == NULL) {
+        free(copy);
+        return;
+    }
+
     LC3_CMD_FN_PTR(func) = getCommandFunction(token);
 
     // Special logic for input

@@ -380,7 +380,7 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
 
 
 // Run until breakpoint, halt or maxsteps
-void LC3_UntilBreakpoint(LC3_SimInstance *sim, int maxSteps) {
+void LC3_UntilBreakpoint(LC3_SimInstance *sim, int64_t maxSteps) {
     if (sim->flags & LC3_SIM_HALTED || maxSteps == 0) {
         return;
     }
@@ -388,7 +388,7 @@ void LC3_UntilBreakpoint(LC3_SimInstance *sim, int maxSteps) {
     int i = 0;
     do {
         LC3_ExecuteInstruction(sim);
-    } while (!sim->memory[_PC].breakpoint && (++i) < maxSteps);
+    } while (!sim->memory[_PC].breakpoint && (maxSteps < 0 || (++i) < maxSteps) && !(sim->flags & LC3_SIM_HALTED));
 
     sim->flags |= (MEM_PC.breakpoint * LC3_SIM_HALTED);
 }

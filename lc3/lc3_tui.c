@@ -1,14 +1,11 @@
 #include "lc3_tui.h"
 #include "lc3_cmd.h"
+#include "lib/cmdarg/cmdarg.h"
 #include <sys/time.h>
 #include "lib/leakcheck/lc.h"
 
-
 #define CMD_LEN_MAX (256)
 #define RUNSTEP_US  (100000)
-
-
-static bool initialized = false;
 
 
 String copyString(String str) {
@@ -49,12 +46,7 @@ void stringDelete(String *str, int idx) {
 }
 
 
-LC3_TermInterface LC3_CreateTermInterface(LC3_SimInstance *sim) {
-    if (!initialized) {
-        initscr();
-        initialized = true;
-    }
-
+LC3_TermInterface LC3_CreateTermInterface(LC3_SimInstance *sim, int argc, char **argv) {
     LC3_TermInterface ret = {
         .sim = sim,
         .cols = 0,
@@ -70,8 +62,29 @@ LC3_TermInterface LC3_CreateTermInterface(LC3_SimInstance *sim) {
         .delay = 100,
         .numDisplay = LC3_NDISPLAY_HEX,
         .running = false,
+        .headless = false,
     };
 
+    // Handle flag(s)
+    enum Flag {
+        HEADLESS = 0x01,
+    };
+
+    ca_config *config = ca_alloc_config();
+    ca_bind_flag(config, "--headless", HEADLESS);
+
+    ca_info *info = ca_parse(config, argc, argv);
+    uint64_t flags = ca_flags(info);
+
+    ca_free_config(config);
+    ca_free_info(info);
+
+    if ((ret.headless = (flags & HEADLESS) > 0)) {
+        return ret;
+    }
+
+    // ncurses setup
+    initscr();
     keypad(stdscr, true);
     halfdelay(ret.delay);
     noecho();
@@ -105,13 +118,19 @@ static void destroyWindow(WINDOW *win) {
 
 
 void LC3_DestroyTermInterface(LC3_TermInterface tui) {
+    freeStringArray(tui.commands);
+
+    if (tui.headless) {
+        return;
+    }
+
+    // ncurses cleanup
     destroyWindow(tui.memView);
     destroyWindow(tui.regView);
     destroyWindow(tui.inView);
     destroyWindow(tui.outView);
     destroyWindow(tui.inViewBox);
     destroyWindow(tui.outViewBox);
-    freeStringArray(tui.commands);
     endwin();
 }
 
@@ -301,6 +320,11 @@ static void handleInput(LC3_TermInterface *tui) {
 
 
 void LC3_ShowMessage(LC3_TermInterface *tui, const char *msg, bool isError) {
+    if (tui->headless) {
+        printf("%s\n", msg);
+        return;
+    }
+
     if (isError) {
         attron(COLOR_PAIR(1));
     }
@@ -430,11 +454,8 @@ static void displaySimulator(LC3_TermInterface *tui) {
 }
 
 
-int LC3_RunTermInterface(LC3_TermInterface *tui) {
-    if (!initialized) {
-        return 1;
-    }
-
+// Main loop for TUI mode
+static void runTermInterfaceDefault(LC3_TermInterface *tui) {
     tui->running = true;
 
     while (tui->running) {
@@ -464,5 +485,38 @@ int LC3_RunTermInterface(LC3_TermInterface *tui) {
 
     clear();
     refresh();
+}
+
+
+// Main loop for headless mode
+static void runTermInterfaceHeadless(LC3_TermInterface *tui) {
+    tui->running = true;
+
+    char cmd[CMD_LEN_MAX + 1] = {0};
+    int ch = 0, i;
+
+    while (tui->running) {
+        // Read command input from stdin
+        for (i = 0; (ch = getchar()) != EOF && ch != '\n' && i < CMD_LEN_MAX; i++) {
+            cmd[i] = (char)ch;
+        }
+
+        if (ch == EOF) {
+            break;
+        }
+
+        cmd[i] = '\0';
+        LC3_ExecuteCommand(tui, cmd);
+    }
+}
+
+
+int LC3_RunTermInterface(LC3_TermInterface *tui) {
+    if (tui->headless) {
+        runTermInterfaceHeadless(tui);
+    } else {
+        runTermInterfaceDefault(tui);
+    }
+
     return 0;
 }

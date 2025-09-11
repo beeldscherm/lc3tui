@@ -103,4 +103,4 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim);
  * Run until breakpoint, halted or maximum steps
  * Sets the LC3_SIM_HALTED flag afterwards
  */
-void LC3_UntilBreakpoint(LC3_SimInstance *sim, int maxSteps);
+void LC3_UntilBreakpoint(LC3_SimInstance *sim, int64_t maxSteps);
