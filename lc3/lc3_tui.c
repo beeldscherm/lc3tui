@@ -151,7 +151,7 @@ void LC3_DestroyTermInterface(LC3_TermInterface tui) {
 
 
 bool LC3_IsAddrDisplayed(LC3_TermInterface *tui, uint16_t addr) {
-    return (addr >= tui->memViewStart) && (addr <= tui->memViewStart + MEM_VIEW_H());
+    return tui->headless || ((addr >= tui->memViewStart) && (addr <= tui->memViewStart + MEM_VIEW_H()));
 }
 
 

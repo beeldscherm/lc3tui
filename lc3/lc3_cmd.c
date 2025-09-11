@@ -223,27 +223,56 @@ LC3_CMD_FN(setMemoryValue) {
 
 
 // Set register value
-// r[eg] <register> <value>
+// r[eg] <register> [value]
 LC3_CMD_FN(setRegister) {
-    if (argc != 2 || strlen(argv[0]) != 2) {
+    char tmp[64];
+    #define SR_IfElse(reg, type, min, max)                  \
+        if (value.set && inRange(value.value, min, max)) {  \
+            reg = (type)value.value;                        \
+        } else {                                            \
+            sprintf(tmp, "x%04X", reg);                     \
+            LC3_ShowMessage(tui, tmp, false);               \
+        }
+
+    if (argc < 1 || argc > 2) {
+        LC3_ShowMessage(tui, "invalid argc", true);
         return 1;
     }
 
-    OptInt value = parseVariable(sim, argv[1]);
-    char c1 = toupper(argv[0][0]);
-    char c2 = toupper(argv[0][1]);
+    OptInt value = {0, 0};
+    value = argc > 1 ? parseVariable(sim, argv[1]) : value;
 
-    if (value.set && c1 == 'R' && c2 < '8' && c2 >= '0' && inRange(value.value, INT16_MIN, UINT16_MAX)) {
-        sim->reg.reg[(c2 - '0')] = value.value;
-        return 0;
-    } else if (value.set && c1 == 'P' && c2 == 'C' && inRange(value.value, 0, UINT16_MAX)) {
-        sim->reg.PC = value.value;
-        return 0;
-    } else {
-        LC3_ShowMessage(tui, "invalid argument", true);
+    // Registers are at most 3 characters
+    int len = strlen(argv[0]);
+
+    if (len < 1 || len > 3) {
+        LC3_ShowMessage(tui, "invalid register name", true);
     }
 
-    return 1;
+    char c1 = len > 0 ? toupper(argv[0][0]) : '\0';
+    char c2 = len > 1 ? toupper(argv[0][1]) : '\0';
+    char c3 = len > 2 ? toupper(argv[0][2]) : '\0';
+
+    if (c1 == 'R' && c2 < '8' && c2 >= '0') {
+        SR_IfElse(sim->reg.reg[(c2 - '0')], int16_t, INT16_MIN, UINT16_MAX);
+    } else if (c1 == 'P' && c2 == 'C') {
+        SR_IfElse(sim->reg.PC, uint16_t, 0, UINT16_MAX);
+    } else if (c1 == 'P' && c2 == 'S' && c3 == 'R') {
+        SR_IfElse(sim->reg.PSR, uint16_t, 0, UINT16_MAX);
+    } else if (c1 == 'M' && c2 == 'A' && c3 == 'R') {
+        SR_IfElse(sim->reg.MAR, uint16_t, 0, UINT16_MAX);
+    } else if (c1 == 'M' && c2 == 'D' && c3 == 'R') {
+        SR_IfElse(sim->reg.MDR, int16_t, INT16_MIN, UINT16_MAX);
+    } else {
+        LC3_ShowMessage(tui, "invalid register name", true);
+        return 1;
+    }
+
+    if (!LC3_IsAddrDisplayed(tui, sim->reg.PC)) {
+        tui->memViewStart = sim->reg.PC;
+    }
+
+    return 0;
 }
 
 
@@ -474,7 +503,7 @@ LC3_CMD_FN(showHelpInfo) {
         mvprintw(y + 1,  x, "    l[oa]d FILE            | Loads .lc3 file into memory");
         mvprintw(y + 2,  x, "    b[reak]p[point] N ...  | Sets breakpoint at provided locations (PC assumed)");
         mvprintw(y + 3,  x, "    s[et] [N1] N2          | Sets address N1 (PC assumed) to N2");
-        mvprintw(y + 4,  x, "    r[eg] R N              | Sets register R to value N");
+        mvprintw(y + 4,  x, "    r[eg] R [N]            | Sets register R to value N, or show R as 4-digit hex if N is not provided");
         mvprintw(y + 5,  x, "    run                    | Run simulator until breakpoint or halted");
         mvprintw(y + 6,  x, "    h[alt]                 | Halt simulator");
         mvprintw(y + 7,  x, "    st[ep] [N]             | Execute N instructions (1 assumed), or until breakpoint");

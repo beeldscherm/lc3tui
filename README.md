@@ -53,7 +53,7 @@ Commands:
     l[oa]d FILE            | Loads .lc3 file into memory
     b[reak]p[point] N ...  | Sets breakpoint at provided locations (PC assumed).
     s[et] [N1] N2          | Sets address N1 (PC assumed) to N2.
-    r[eg] R N              | Sets register R to value N.
+    r[eg] R [N]            | Sets register R to value N, or show R as 4-digit hex if N is not provided
     run                    | Run simulator until breakpoint or halted.
     h[alt]                 | Halt simulator.
     st[ep] [N]             | Execute N instructions (1 assumed), or until breakpoint.

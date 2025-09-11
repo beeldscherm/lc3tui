@@ -50,10 +50,10 @@ typedef struct LC3_Registers {
     uint8_t INTV;
     int16_t Saved_SSP;
     int16_t Saved_USP;
-    uint8_t INTP : 3;
-    bool ACV : 1;
-    bool INT : 1;
-    bool BEN : 1; 
+    uint8_t INTP;
+    bool ACV;
+    bool INT;
+    bool BEN; 
 } LC3_Registers;
 
 
