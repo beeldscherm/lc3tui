@@ -491,6 +491,10 @@ LC3_CMD_FN(counterCommands) {
 // Show help info
 // help
 LC3_CMD_FN(showHelpInfo) {
+    if (tui->headless) {
+        return 0;
+    }
+
     noecho();
     cbreak();
     int c = -1, x = 0, y = 0;

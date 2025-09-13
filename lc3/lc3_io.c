@@ -103,19 +103,22 @@ void LC3_LoadExecutable(LC3_SimInstance *sim, const char *filename) {
 }
 
 
+static bool isEmpty(const LC3_MemoryCell cell) {
+    return (cell.value == 0) && (cell.debugIndex == 0) && (cell.hasDebug == 0) && (cell.breakpoint == 0);
+}
+
+
 static void writeMemory(LC3_SimInstance *sim, FILE *fp) {
-    LC3_MemoryCell empty = {0, 0, 0, 0};
-    size_t chunkCounter = 0;
+    LC3_MemoryCell *empty = calloc(1, sizeof(LC3_MemoryCell));
+    int chunkCounter = 0;
 
     for (int i = 0; i < LC3_MEM_SIZE; i++) {
-        bool isEmpty = (memcmp(&empty, &sim->memory[i], sizeof(LC3_MemoryCell)) == 0);
-
-        if (isEmpty) {
+        if (isEmpty(sim->memory[i])) {
             chunkCounter++;
         } else {
             if (chunkCounter > 0) {
-                fwrite(&empty, sizeof(LC3_MemoryCell), 1, fp);
-                fwrite(&chunkCounter, sizeof(size_t), 1, fp);
+                fwrite(empty, sizeof(LC3_MemoryCell), 1, fp);
+                fwrite(&chunkCounter, sizeof(int), 1, fp);
                 chunkCounter = 0;
             }
 
@@ -124,8 +127,30 @@ static void writeMemory(LC3_SimInstance *sim, FILE *fp) {
     }
 
     if (chunkCounter > 0) {
-        fwrite(&empty, sizeof(LC3_MemoryCell), 1, fp);
-        fwrite(&chunkCounter, sizeof(size_t), 1, fp);
+        fwrite(empty, sizeof(LC3_MemoryCell), 1, fp);
+        fwrite(&chunkCounter, sizeof(int), 1, fp);
+    }
+
+    free(empty);
+    return;
+}
+
+
+static void readMemory(LC3_SimInstance *sim, FILE *fp) {
+    LC3_MemoryCell current = {0};
+    int chunkCounter = 0;
+
+    for (int i = 0; i < LC3_MEM_SIZE;) {
+        fread(&current, sizeof(LC3_MemoryCell), 1, fp);
+
+        if (isEmpty(current)) {
+            fread(&chunkCounter, sizeof(int), 1, fp);
+            memset(sim->memory + i, 0, chunkCounter * sizeof(LC3_MemoryCell));
+            i += chunkCounter;
+        } else {
+            sim->memory[i] = current;
+            i++;
+        }
     }
 
     return;
@@ -146,9 +171,9 @@ void LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename) {
 
     fwrite(buffer, 1, sizeof(buffer), fp);
     writeMemory(sim, fp);
-    fwrite(&sim->debug.sz, sizeof(size_t), 1, fp);
+    fwrite(&sim->debug.sz, sizeof(int), 1, fp);
 
-    for (size_t i = 0; i < sim->debug.sz; i++) {
+    for (int i = 0; i < sim->debug.sz; i++) {
         printString(fp, sim->debug.ptr[i]);
     }
 
@@ -156,6 +181,39 @@ void LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename) {
     fwrite(&sim->flags, sizeof(uint32_t), 1, fp);
     fwrite(&sim->counter, sizeof(size_t), 1, fp);
     fwrite(&sim->c2, sizeof(size_t), 1, fp);
+
+    fclose(fp);
+}
+
+
+void LC3_LoadSimulatorState(LC3_SimInstance *sim, const char *filename) {
+    FILE *fp = fopen(filename, "rb");
+
+    if (fp == NULL) {
+        sim->error = "Failed to open file!";
+        return;
+    }
+
+    // Read registers
+    uint8_t buffer[48] = {0};
+    fread(buffer, 1, sizeof(buffer), fp);
+
+    sim->reg = *((LC3_Registers *)buffer);
+    readMemory(sim, fp);
+
+    int dsz = 0;
+    fread(&dsz, sizeof(int), 1, fp);
+
+    freeStringArray(sim->debug);
+    sim->debug = newStringArray();
+
+    for (int i = 0; i < dsz; i++) {
+        addString(&sim->debug, readString(fp));
+    }
+
+    fread(&sim->flags, sizeof(uint32_t), 1, fp);
+    fread(&sim->counter, sizeof(size_t), 1, fp);
+    fread(&sim->c2, sizeof(size_t), 1, fp);
 
     fclose(fp);
 }

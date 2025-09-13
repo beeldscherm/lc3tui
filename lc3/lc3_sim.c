@@ -72,18 +72,19 @@ void LC3_DestroySimInstance(LC3_SimInstance sim) {
 
 
 // Get a value from memory
-int16_t memRead(LC3_SimInstance *sim, uint16_t addr) {
+static int16_t memRead(LC3_SimInstance *sim, uint16_t addr) {
     sim->reg.MAR = addr;
     sim->reg.MDR = sim->memory[sim->reg.MAR].value;
     return sim->reg.MDR;
 }
 
 
-void memWrite(LC3_SimInstance *sim, uint16_t addr, int16_t val) {
+static void memWrite(LC3_SimInstance *sim, uint16_t addr, int16_t val) {
     sim->reg.MAR = addr;
     sim->reg.MDR = val;
     sim->memory[sim->reg.MAR].value = sim->reg.MDR;
 }
+
 
 // Get register value
 #define R(n) (sim->reg.reg[(n)])
