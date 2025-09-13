@@ -1,13 +1,19 @@
 #include "lc3_io.h"
 #include "lc3_util.h"
 
+#define READ_SAFE(ptr, sz, n, fp, onFail) if (fread(ptr, sz, n, fp) != n) { fclose(fp); onFail;}
+#define CHECK(x) if(!(x)) { return 1; }
+
 
 // Read string from file
 static String readString(FILE *fp) {
     String ret = newString();
+    char c = 0;
+    READ_SAFE(&c, 1, 1, fp, ret.cap = 0; return ret);
 
-    for (char c; fread(&c, 1, 1, fp) && c != '\0';) {
+    while (c != '\0') {
         for (const char *str = charString(c); str[0]; addchar(&ret, str[0]), str++);
+        READ_SAFE(&c, 1, 1, fp, ret.cap = 0; return ret);
     }
 
     return ret;
@@ -94,7 +100,7 @@ void LC3_LoadExecutable(LC3_SimInstance *sim, const char *filename) {
     FILE *fp = fopen(filename, "rb");
 
     if (fp == NULL) {
-        sim->error = "Failed to open file!";
+        sim->error = "failed to open file";
         return;
     }
 
@@ -109,7 +115,7 @@ static bool isEmpty(const LC3_MemoryCell cell) {
 
 
 static void writeMemory(LC3_SimInstance *sim, FILE *fp) {
-    LC3_MemoryCell *empty = calloc(1, sizeof(LC3_MemoryCell));
+    LC3_MemoryCell *empty = lc_calloc(1, sizeof(LC3_MemoryCell));
     int chunkCounter = 0;
 
     for (int i = 0; i < LC3_MEM_SIZE; i++) {
@@ -131,20 +137,21 @@ static void writeMemory(LC3_SimInstance *sim, FILE *fp) {
         fwrite(&chunkCounter, sizeof(int), 1, fp);
     }
 
-    free(empty);
+    lc_free(empty);
     return;
 }
 
 
-static void readMemory(LC3_SimInstance *sim, FILE *fp) {
+static int readMemory(LC3_SimInstance *sim, FILE *fp) {
     LC3_MemoryCell current = {0};
     int chunkCounter = 0;
 
     for (int i = 0; i < LC3_MEM_SIZE;) {
-        fread(&current, sizeof(LC3_MemoryCell), 1, fp);
+        READ_SAFE(&current, sizeof(LC3_MemoryCell), 1, fp, return 1);
 
         if (isEmpty(current)) {
-            fread(&chunkCounter, sizeof(int), 1, fp);
+            READ_SAFE(&chunkCounter, sizeof(int), 1, fp, return 1);
+            CHECK(i + chunkCounter < LC3_MEM_SIZE);
             memset(sim->memory + i, 0, chunkCounter * sizeof(LC3_MemoryCell));
             i += chunkCounter;
         } else {
@@ -153,16 +160,16 @@ static void readMemory(LC3_SimInstance *sim, FILE *fp) {
         }
     }
 
-    return;
+    return 0;
 }
 
 
-void LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename) {
+int LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename) {
     FILE *fp = fopen(filename, "wb");
 
     if (fp == NULL) {
         sim->error = "Failed to open file!";
-        return;
+        return 1;
     }
 
     // Save some space in case any variables are added
@@ -183,37 +190,41 @@ void LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename) {
     fwrite(&sim->c2, sizeof(size_t), 1, fp);
 
     fclose(fp);
+    return 0;
 }
 
 
-void LC3_LoadSimulatorState(LC3_SimInstance *sim, const char *filename) {
+int LC3_LoadSimulatorState(LC3_SimInstance *sim, const char *filename) {
     FILE *fp = fopen(filename, "rb");
 
     if (fp == NULL) {
         sim->error = "Failed to open file!";
-        return;
+        return 1;
     }
 
     // Read registers
     uint8_t buffer[48] = {0};
-    fread(buffer, 1, sizeof(buffer), fp);
+    READ_SAFE(buffer, 1, sizeof(buffer), fp, return 1);
 
     sim->reg = *((LC3_Registers *)buffer);
-    readMemory(sim, fp);
+    CHECK(readMemory(sim, fp) != 0);
 
     int dsz = 0;
-    fread(&dsz, sizeof(int), 1, fp);
+    READ_SAFE(&dsz, sizeof(int), 1, fp, return 1);
 
     freeStringArray(sim->debug);
     sim->debug = newStringArray();
 
     for (int i = 0; i < dsz; i++) {
-        addString(&sim->debug, readString(fp));
+        String current = readString(fp);
+        addString(&sim->debug, current);
+        CHECK(current.cap > 0);
     }
 
-    fread(&sim->flags, sizeof(uint32_t), 1, fp);
-    fread(&sim->counter, sizeof(size_t), 1, fp);
-    fread(&sim->c2, sizeof(size_t), 1, fp);
+    READ_SAFE(&sim->flags, sizeof(uint32_t), 1, fp, return 1);
+    READ_SAFE(&sim->counter, sizeof(size_t), 1, fp, return 1);
+    READ_SAFE(&sim->c2, sizeof(size_t), 1, fp, return 1);
 
     fclose(fp);
+    return 0;
 }

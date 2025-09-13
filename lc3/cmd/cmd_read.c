@@ -14,6 +14,7 @@ LC3_CMD_FN(loadExecutable) {
 
     if (sim->error != NULL) {
         LC3_ShowMessage(tui, "failed to load file", true);
+        LC3_ShowMessage(tui, sim->error, true);
         sim->error = NULL;
     }
 

@@ -4,12 +4,16 @@
 // Show help info
 // help
 LC3_CMD_FN(showHelpInfo) {
-    if (tui->headless) {
-        return 0;
-    }
-
     int sz = 0;
     const LC3_Command *commands = getCommands(&sz);
+
+    if (tui->headless) {
+        for (int i = 0; i < sz; i++) {
+            printf("%s\n", commands[i].info);
+        }
+
+        return 0;
+    }
 
     noecho();
     cbreak();

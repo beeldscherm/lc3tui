@@ -163,28 +163,41 @@ bool inRange(int n, int min, int max) {
 #include "cmd/cmd_clear.c"
 #include "cmd/cmd_count.c"
 #include "cmd/cmd_help.c"
+#include "cmd/cmd_save.c"
+#include "cmd/cmd_load.c"
 
 
 static const LC3_Command CMD_MAP[] = {
-    {"read",        "rd",   loadExecutable,     "r[ea]d FILE             | Read .lc3 file into memory"},
-    {"breakpoint",  "bp",   breakpoint,         "b[reak]p[point] N ...   | Sets breakpoint at provided locations (PC assumed)"},
+    // Help and quitting
+    {"help",        NULL,   showHelpInfo,       "help                    | Show this message"},
+    {"quit",        "q",    quitTUI,            "q[uit]                  | Quit this program"},
+
+    // Device state
     {"set",         "s",    setMemoryValue,     "s[et] [N1] N2           | Sets address N1 (PC assumed) to N2"},
     {"reg",         "r",    setRegister,        "r[eg] R [N]             | Sets register R to value N, or show R as 4-digit hex if N is not provided"},
-    {"run",         NULL,   startSimulation,    "run                     | Run simulator until breakpoint or halted"},
-    {"halt",        "h",    stopSimulation,     "h[alt]                  | Halt simulator"},
-    {"undo",        "u",    undoSteps,          "u[ndo] [N]              | Undo previous N instructions (1 assumed)"},
+    {"read",        "rd",   loadExecutable,     "r[ea]d FILE             | Read .lc3 file into memory"},
+    {"restart",     NULL,   restartDevice,      "restart                 | Clear simulator"},
+
+    // Simulation control/display
+    {"go",          "g",    goToCell,           "g[o] [N]                | Scroll memory view N (PC assumed)"},
+    {"breakpoint",  "bp",   breakpoint,         "b[reak]p[point] N ...   | Sets breakpoint at provided locations (PC assumed)"},
     {"num",         "n",    setnumDisplay,      "n[um] [x/i/u/c]         | Set number display type (hex, int, unsigned, char), hex assumed"},
     {"step",        "st",   makeSteps,          "st[ep] [N]              | Execute N instructions (1 assumed), or until breakpoint"},
-    {"quit",        "q",    quitTUI,            "q[uit]                  | Quit this program"},
+    {"undo",        "u",    undoSteps,          "u[ndo] [N]              | Undo previous N instructions (1 assumed)"},
+    {"run",         NULL,   startSimulation,    "run                     | Run simulator until breakpoint or halted"},
+    {"halt",        "h",    stopSimulation,     "h[alt]                  | Halt simulator"},
+    {"count",       "cnt",  counterCommands,    "count [get]/reset/total | Get amount of instructions executed, reset count, or get total count"},
+
+    // I/O
     {"input",       "in",   giveInput,          "in[put] ...             | Queues any characters (possibly escaped) after the delimiter for input"},
     {"noinput",     "nin",  removeInputs,       "n[o]in[put]             | Delete all queued input"},
-    {"restart",     NULL,   restartDevice,      "restart                 | Clear simulator"},
-    {"go",          "g",    goToCell,           "g[o] [N]                | Scroll memory view N (PC assumed)"},
-    {"help",        NULL,   showHelpInfo,       "help                    | Show this message"},
     {"inputfile",   "if",   setInputFile,       "i[nput]f[ile] FILE      | Set file to take input from, this file has higher precedence than the input box"},
     {"outputfile",  "of",   setOutputFile,      "o[utput]f[ile] FILE     | Set file to put output into, control characters are outputted directly"},
     {"clear",       NULL,   clearOutput,        "clear                   | Clear output box"},
-    {"count",       "cnt",  counterCommands,    "count [get]/reset/total | Get amount of instructions executed, reset count, or get total count"}
+
+    // Saving/loading
+    {"save",        "sv",   saveSimulator,      "s[a]v[e] FILE           | Save simulator state to file"},
+    {"load",        "ld",   loadSimulator,      "l[oa]d FILE             | Load simulator state from file"},
 };
 
 

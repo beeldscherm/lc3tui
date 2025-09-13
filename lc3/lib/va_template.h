@@ -6,17 +6,17 @@
 
     // Malloc function
     #ifndef VA_MALLOC
-    #define VA_MALLOC malloc
+    #define VA_MALLOC lc_malloc
     #endif
 
     // Realloc function
     #ifndef VA_REALLOC
-    #define VA_REALLOC realloc
+    #define VA_REALLOC lc_realloc
     #endif
 
     // Free function
     #ifndef VA_FREE
-    #define VA_FREE free
+    #define VA_FREE lc_free
     #endif
 #endif
 

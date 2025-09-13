@@ -10,9 +10,9 @@ void LC3_LoadExecutable(LC3_SimInstance *sim, const char *filename);
 /*
  * Save simulator state
  */
-void LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename);
+int LC3_SaveSimulatorState(LC3_SimInstance *sim, const char *filename);
 
 /*
  * Load simulator state
  */
-void LC3_LoadSimulatorState(LC3_SimInstance *sim, const char *filename);
+int LC3_LoadSimulatorState(LC3_SimInstance *sim, const char *filename);
