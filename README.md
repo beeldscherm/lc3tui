@@ -87,4 +87,3 @@ Please create an issue if you encounter any bugs!
 
 - [ ] Read functions for other LC3 file formats
 - [ ] Some more keybinds
-- [ ] Fix debug string storage

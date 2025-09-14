@@ -25,6 +25,19 @@ static void printString(FILE *fp, String str) {
 }
 
 
+static void setDebugString(LC3_SimInstance *sim, String debug, int addr) {
+    if (sim->memory[addr].hasDebug) {
+        int idx = sim->memory[addr].debugIndex;
+        lc_free(sim->debug.ptr[idx].ptr);
+        sim->debug.ptr[idx] = debug;
+    } else {
+        sim->memory[addr].hasDebug   = true;
+        sim->memory[addr].debugIndex = sim->debug.sz;
+        addString(&sim->debug, debug);
+    }
+}
+
+
 // Load LC3A executable (.lc3)
 static void loadExecutableLC3A(LC3_SimInstance *sim, FILE *fp) {
     enum {
@@ -79,15 +92,7 @@ static void loadExecutableLC3A(LC3_SimInstance *sim, FILE *fp) {
 
                 if ((flags & LC3_FILE_DBG)) {
                     String debug = readString(fp);
-
-                    if (sim->memory[i].hasDebug) {
-                        lc_free(sim->debug.ptr[sim->memory[i].debugIndex].ptr);
-                        sim->debug.ptr[sim->memory[i].debugIndex] = debug;
-                    } else {
-                        sim->memory[i].hasDebug = true;
-                        sim->memory[i].debugIndex = sim->debug.sz;
-                        addString(&sim->debug, debug);
-                    }
+                    setDebugString(sim, debug, i);
                 }
             }
         }
@@ -139,9 +144,7 @@ static void loadExecutableLC3T(LC3_SimInstance *sim, FILE *fp) {
             sim->memory[addr].value = entry.value;
 
             if (entry.len > 0) {
-                sim->memory[addr].hasDebug   = true;
-                sim->memory[addr].debugIndex = sim->debug.sz;
-                addString(&sim->debug, entry.debug);
+                setDebugString(sim, entry.debug, addr);
             }
         } else {
             if (entry.len > 0) {

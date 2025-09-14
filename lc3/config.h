@@ -3,7 +3,7 @@
  */
 
 #pragma once
-#define DO_LEAK_CHECK (0)
+#define DO_LEAK_CHECK (1)
 
 
 // "ISO C forbids an empty translation unit"

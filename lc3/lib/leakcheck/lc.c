@@ -17,10 +17,11 @@ typedef struct lc_block {
 
 static lc_block_ptr head = NULL;
 static size_t allocs = 0, frees = 0;
+static size_t current = 0, max = 0, total = 0;
 
 
 void lc_summary(void) {
-    printf("Leak summary: (%ld allocs, %ld frees)\n", allocs, frees);
+    printf("Leak summary: (%ld allocs, %ld frees, %ld bytes max, %ld bytes total)\n", allocs, frees, max, total);
 
     if (!head) {
         printf("\tNo leaks detected.\n");
@@ -52,7 +53,11 @@ void *_lc_alloc_internal(size_t size, int reset, const char *file, size_t line) 
     }
 
     head = bl;
+
     allocs++;
+    total += size;
+    current += size;
+    max = (current > max) ? current : max;
 
     return (bl + 1);
 }
@@ -74,6 +79,8 @@ void _lc_free_internal(void *ptr, const char *file, size_t line) {
     }
 
     frees++;
+    current -= bl->size;
+
     free(bl);
 }
 
