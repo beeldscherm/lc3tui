@@ -1,8 +1,8 @@
 #include "lc3_io.h"
 #include "lc3_util.h"
 
-#define READ_SAFE(ptr, sz, n, fp, onFail) if (fread(ptr, sz, n, fp) != n) { fclose(fp); onFail;}
-#define CHECK(x) if(!(x)) { return 1; }
+#define READ_SAFE(ptr, sz, n, fp, onFail) if (fread(ptr, sz, n, fp) != n) { onFail; }
+#define CHECK(x, onFail) if(!(x)) { onFail; }
 
 
 // Read string from file
@@ -177,7 +177,7 @@ enum LC3_FileType getFileType(const char *filename) {
     }
 
     uint8_t magic[8] = {0};
-    READ_SAFE(magic, 1, sizeof(magic), fp, return type);
+    READ_SAFE(magic, 1, sizeof(magic), fp, fclose(fp); return type);
     
     if (memcmp(magic, "LC3\x03", 4) == 0) {
         type = LC3_MYLC3A_File;
@@ -261,7 +261,7 @@ static int readMemory(LC3_SimInstance *sim, FILE *fp) {
 
         if (isEmpty(current)) {
             READ_SAFE(&chunkCounter, sizeof(int), 1, fp, return 1);
-            CHECK(i + chunkCounter < LC3_MEM_SIZE);
+            CHECK(i + chunkCounter < LC3_MEM_SIZE, return 1);
             memset(sim->memory + i, 0, chunkCounter * sizeof(LC3_MemoryCell));
             i += chunkCounter;
         } else {
@@ -314,13 +314,13 @@ int LC3_LoadSimulatorState(LC3_SimInstance *sim, const char *filename) {
 
     // Read registers
     uint8_t buffer[48] = {0};
-    READ_SAFE(buffer, 1, sizeof(buffer), fp, return 1);
+    READ_SAFE(buffer, 1, sizeof(buffer), fp, fclose(fp); return 1);
 
     sim->reg = *((LC3_Registers *)buffer);
-    CHECK(readMemory(sim, fp) != 0);
+    CHECK(readMemory(sim, fp) != 0, fclose(fp); return 1);
 
     int dsz = 0;
-    READ_SAFE(&dsz, sizeof(int), 1, fp, return 1);
+    READ_SAFE(&dsz, sizeof(int), 1, fp, fclose(fp); return 1);
 
     freeStringArray(sim->debug);
     sim->debug = newStringArray();
@@ -328,12 +328,12 @@ int LC3_LoadSimulatorState(LC3_SimInstance *sim, const char *filename) {
     for (int i = 0; i < dsz; i++) {
         String current = readString(fp);
         addString(&sim->debug, current);
-        CHECK(current.cap > 0);
+        CHECK(current.cap > 0, fclose(fp); return 1);
     }
 
-    READ_SAFE(&sim->flags, sizeof(uint32_t), 1, fp, return 1);
-    READ_SAFE(&sim->counter, sizeof(size_t), 1, fp, return 1);
-    READ_SAFE(&sim->c2, sizeof(size_t), 1, fp, return 1);
+    READ_SAFE(&sim->flags, sizeof(uint32_t), 1, fp, fclose(fp); return 1);
+    READ_SAFE(&sim->counter, sizeof(size_t), 1, fp, fclose(fp); return 1);
+    READ_SAFE(&sim->c2, sizeof(size_t), 1, fp, fclose(fp); return 1);
 
     fclose(fp);
     return 0;

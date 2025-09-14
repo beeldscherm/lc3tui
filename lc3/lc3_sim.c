@@ -43,7 +43,7 @@ LC3_SimInstance LC3_CreateSimInstance() {
     LC3_SimInstance ret = {
         .memory  = lc_calloc(LC3_MEM_SIZE, sizeof(LC3_MemoryCell)),
         .debug   = newStringArray(),
-        .reg     = {.PC = 0x3000, .PSR = 0x8000},
+        .reg     = {.PC = 0x3000, .PSR = 0x8000, .Saved_SSP = 0x3000},
         .flags   = LC3_SIM_REDIR_TRAP | LC3_SIM_HALTED,
         .counter = 0,
         .c2      = 0,
@@ -349,6 +349,7 @@ void LC3_ExecuteInstruction(LC3_SimInstance *sim) {
     state45:
         sim->reg.Saved_USP = sim->reg.reg[6];
         sim->reg.reg[6] = sim->reg.Saved_SSP;
+        goto state37;
 
     // Start of interrupt
     state49:
