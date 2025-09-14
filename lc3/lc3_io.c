@@ -95,8 +95,100 @@ static void loadExecutableLC3A(LC3_SimInstance *sim, FILE *fp) {
 }
 
 
+static void loadExecutableLC3T(LC3_SimInstance *sim, FILE *fp) {
+    struct LC3T_MemEntry {
+        uint16_t value;
+        uint8_t  isOrig;
+        uint32_t len;
+        String debug;
+    } entry;
+
+    uint32_t addr = 0, bytes_read = 7, filesize = 0;
+    bool origFound = false;
+
+    fseek(fp, 0, SEEK_END);
+    filesize = ftell(fp);
+
+    // Skip magic number and version string
+    fseek(fp, 7, SEEK_SET);
+
+    while (bytes_read < filesize) {
+        // Read instructions
+        fread(&entry.value,  sizeof(uint16_t), 1, fp);
+        fread(&entry.isOrig, sizeof(uint8_t),  1, fp);
+        fread(&entry.len,    sizeof(uint32_t), 1, fp);
+
+        if (entry.len > 0) {
+            entry.debug.ptr = lc_malloc(entry.len + 1);
+            entry.debug.sz  = entry.len;
+            entry.debug.cap = entry.len + 1;
+
+            fread(entry.debug.ptr, 1, entry.len, fp);
+            entry.debug.ptr[entry.len] = '\0';
+        }
+
+        if (entry.isOrig) {
+            sim->reg.PC = entry.value;
+            addr = entry.value - 1;
+            origFound = true;
+
+            if (entry.len > 0) {
+                lc_free(entry.debug.ptr);
+            }
+        } else if (origFound) {
+            sim->memory[addr].value = entry.value;
+
+            if (entry.len > 0) {
+                sim->memory[addr].hasDebug   = true;
+                sim->memory[addr].debugIndex = sim->debug.sz;
+                addString(&sim->debug, entry.debug);
+            }
+        } else {
+            if (entry.len > 0) {
+                lc_free(entry.debug.ptr);
+            }
+
+            sim->error = "unable to determine orig";
+            break;
+        }
+
+        bytes_read += entry.len + 7;
+        addr++;
+    }
+}
+
+
+enum LC3_FileType {
+    LC3_UnknownFile,
+    LC3_MYLC3A_File, // https://github.com/beeldscherm/lc3-assembler .lc3 format
+    LC3_LC3TV1_File, // https://github.com/chiragsakhuja/lc3tools .obj format
+};
+
+
+enum LC3_FileType getFileType(const char *filename) {
+    FILE *fp = fopen(filename, "rb");
+    enum LC3_FileType type = LC3_UnknownFile;
+
+    if (fp == NULL) {
+        return type;
+    }
+
+    uint8_t magic[8] = {0};
+    READ_SAFE(magic, 1, sizeof(magic), fp, return type);
+    
+    if (memcmp(magic, "LC3\x03", 4) == 0) {
+        type = LC3_MYLC3A_File;
+    } else if (memcmp(magic, "\x1c\x30\x15\xc0\x01\x01\x01", 7) == 0) {
+        type = LC3_LC3TV1_File;
+    }
+
+    return type;
+}
+
+
 // Load executable
 void LC3_LoadExecutable(LC3_SimInstance *sim, const char *filename) {
+    enum LC3_FileType type = getFileType(filename);
     FILE *fp = fopen(filename, "rb");
 
     if (fp == NULL) {
@@ -104,11 +196,26 @@ void LC3_LoadExecutable(LC3_SimInstance *sim, const char *filename) {
         return;
     }
 
-    loadExecutableLC3A(sim, fp);
+    switch (type) {
+        case LC3_UnknownFile:
+            sim->error = "unknown file format";
+            break;
+        case LC3_MYLC3A_File:
+            loadExecutableLC3A(sim, fp);
+            break;
+        case LC3_LC3TV1_File:
+            loadExecutableLC3T(sim, fp);
+            break;
+        default:
+            break;
+    }
+
     fclose(fp);
+    return;
 }
 
 
+// Saving/loading simulator state
 static bool isEmpty(const LC3_MemoryCell cell) {
     return (cell.value == 0) && (cell.debugIndex == 0) && (cell.hasDebug == 0) && (cell.breakpoint == 0);
 }
